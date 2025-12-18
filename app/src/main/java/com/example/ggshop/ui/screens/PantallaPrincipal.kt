@@ -96,21 +96,64 @@ private fun TopBarPrincipal(viewModel: MainViewModel) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Logo GGShop
                 Icon(
-                    imageVector = Icons.Default.Settings, // Cambia por tu painterResource(id = R.drawable.logo_gg)
+                    imageVector = Icons.Default.Settings, // Icono de engranaje/tech
                     contentDescription = "GGShop Logo",
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(36.dp),
                     tint = TechYellow
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("GGSHOP", fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Columna que contiene el Título y la Ubicación (Clickable)
+                Column(
+                    modifier = Modifier
+                        .clickable {
+                            // Esta es la navegación funcional que pide la pauta
+                            viewModel.navigateTo(Screen.Stores)
+                        }
+                        .padding(vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "GGSHOP",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 18.sp,
+                        letterSpacing = 1.sp,
+                        color = TechBlack
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = "Ubicación",
+                            modifier = Modifier.size(12.dp),
+                            tint = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Sucursales y puntos de retiro", // Texto informativo
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
         },
         actions = {
-            IconButton(onClick = { /* Buscar */ }) {
-                Icon(Icons.Default.Search, contentDescription = "Buscar", tint = TechBlack)
+            IconButton(onClick = { /* Lógica de búsqueda */ }) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Buscar",
+                    tint = TechBlack,
+                    modifier = Modifier.size(26.dp)
+                )
             }
             IconButton(onClick = { viewModel.navigateTo(Screen.Cart) }) {
-                Icon(Icons.Default.ShoppingCart, contentDescription = "Carrito", tint = TechBlack)
+                Icon(
+                    imageVector = Icons.Default.ShoppingCart,
+                    contentDescription = "Carrito",
+                    tint = TechBlack,
+                    modifier = Modifier.size(26.dp)
+                )
             }
         }
     )

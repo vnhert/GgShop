@@ -102,6 +102,12 @@ class MainViewModel(
             _carrito.value = actual
         }
     }
+    fun navigateUp() {
+        viewModelScope.launch {
+            // Esto dispara el evento que la MainActivity está escuchando
+            _navigationEvents.emit(NavigationEvent.NavigateUp)
+        }
+    }
 
     fun eliminarDelCarrito(productoId: Int) {
         _carrito.value = _carrito.value.filterNot {

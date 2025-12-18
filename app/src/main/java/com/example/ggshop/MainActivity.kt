@@ -75,6 +75,9 @@ fun AppNavHost(viewModel: MainViewModel = viewModel()) {
             composable(route = Screen.MainScreen.route) {
                 PantallaPrincipal(viewModel = viewModel)
             }
+            composable(route = Screen.Stores.route) {
+                Sucursales(viewModel = viewModel) // Aquí llamas a la pantalla del mapa que creamos
+            }
 
             composable(route = Screen.Profile.route) {
                 PerfilUsuario(viewModel = viewModel)
