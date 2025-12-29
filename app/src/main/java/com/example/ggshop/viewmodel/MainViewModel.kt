@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import com.example.ggshop.R
 
 // 👈 Mismo estilo: Definido aquí mismo para el carrito
 data class CartItem(
@@ -44,18 +47,59 @@ class MainViewModel(
     val productos: StateFlow<List<Producto>> = _productos
 
     fun cargarProductos() {
-        viewModelScope.launch {
-            try {
-                val lista = productoRepository.getProductos()
-                // Log para verificar en tu Logcat de Android Studio
-                println("TECH_STORE_DEBUG: Productos cargados = ${lista.size}")
-                _productos.value = lista
-            } catch (e: Exception) {
-                println("TECH_STORE_ERROR: ${e.message}")
-                e.printStackTrace()
-                _productos.value = emptyList()
-            }
-        }
+        val listaManual = listOf(
+            // CATEGORÍA: GAMING
+            Producto(
+                id = 1L,
+                nombre = "Logitech G502 Hero High Performance",
+                descripcion = "Sensor HERO 25K, 11 botones programables, pesas ajustables y RGB.",
+                precio = 49990,
+                stock = 15,
+                imagenUrl = "",
+                categoria = "GAMING"
+            ),
+            Producto(
+                id = 2L,
+                nombre = "Teclado Redragon Kumara K552 RGB",
+                descripcion = "Teclado mecánico TKL, switches Blue, construcción en aluminio y ABS.",
+                precio = 32990,
+                stock = 8,
+                imagenUrl = "https://www.pcfactory.cl/public/foto/28362/1_500.jpg",
+                categoria = "GAMING"
+            ),
+            Producto(
+                id = 5L,
+                nombre = "Audífonos HyperX Cloud II Red",
+                descripcion = "Sonido envolvente 7.1, almohadillas de memory foam y micrófono con cancelación de ruido.",
+                precio = 74990,
+                stock = 12,
+                imagenUrl = "https://www.pcfactory.cl/public/foto/20257/1_500.jpg",
+                categoria = "GAMING"
+            ),
+
+            // CATEGORÍA: CELULARES
+            Producto(
+                id = 3L,
+                nombre = "Apple iPhone 15 128GB Black",
+                descripcion = "Chip A16 Bionic, Dynamic Island, cámara principal de 48 MP y USB-C.",
+                precio = 799990,
+                stock = 5,
+                imagenUrl = "https://www.pcfactory.cl/public/foto/49504/1_500.jpg",
+                categoria = "CELULARES"
+            ),
+            Producto(
+                id = 4L,
+                nombre = "Samsung Galaxy S24 Ultra 256GB",
+                descripcion = "Pantalla QHD+ de 6.8\", procesador Snapdragon 8 Gen 3 y S-Pen incluido.",
+                precio = 1199990,
+                stock = 3,
+                imagenUrl = "https://www.pcfactory.cl/public/foto/50257/1_500.jpg",
+                categoria = "CELULARES"
+            )
+        )
+
+        // Actualizamos el flujo para que la UI se refresque automáticamente
+        _productos.value = listaManual
     }
 
     // --- DETALLE DEL PRODUCTO SELECCIONADO ---

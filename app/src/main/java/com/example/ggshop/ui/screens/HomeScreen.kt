@@ -24,76 +24,91 @@ import com.example.ggshop.ui.theme.GgShopTheme
 
 
 @Composable
-fun HomeScreen(viewModel: MainViewModel) { // Solo recibe el ViewModel
-    Column(
+fun HomeScreen(viewModel: MainViewModel) {
+    // Usamos Box para que el botón "Omitir" flote en la esquina
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(Color.White)
     ) {
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Si aún no tienes el logo, puedes comentar esta parte temporalmente
-        // o poner R.drawable.ic_launcher_foreground que viene por defecto
-        Image(
-            painter = painterResource(id = R.drawable.logo_ggshop),
-            contentDescription = "Logo GgShop",
-            modifier = Modifier.size(180.dp),
-            contentScale = ContentScale.Fit
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Bienvenido a GgShop",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.ExtraBold,
-            color = Color.Black
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Botón Iniciar Sesión (Amarillo)
-        Button(
-            onClick = { viewModel.navigateTo(Screen.Login) }, // Usa el ViewModel para navegar
+        // --- BOTÓN OMITIR ---
+        TextButton(
+            onClick = { viewModel.navigateTo(Screen.MainScreen) }, // Ajusta "MainScreen" al nombre real en tu Screen class
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp)
-                .height(55.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)) // Amarillo Tech
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
         ) {
-            Text("Iniciar Sesión", color = Color.Black, fontWeight = FontWeight.Bold)
+            Text(
+                text = "Omitir",
+                color = Color.Gray,
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp
+            )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Botón Crear Cuenta (Negro)
-        Button(
-            onClick = { viewModel.navigateTo(Screen.Register) }, // Usa el ViewModel para navegar
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp)
-                .height(55.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+        // --- CONTENIDO ORIGINAL ---
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Crear Cuenta", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold)
-        }
+            Spacer(modifier = Modifier.weight(1f))
 
-        Spacer(modifier = Modifier.height(60.dp))
+            Image(
+                painter = painterResource(id = R.drawable.logo_ggshop),
+                contentDescription = "Logo GgShop",
+                modifier = Modifier.size(180.dp),
+                contentScale = ContentScale.Fit
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Bienvenido a GgShop",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.Black
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Botón Iniciar Sesión (Amarillo)
+            Button(
+                onClick = { viewModel.navigateTo(Screen.Login) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+                    .height(55.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700))
+            ) {
+                Text("Iniciar Sesión", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Botón Crear Cuenta (Negro)
+            Button(
+                onClick = { viewModel.navigateTo(Screen.Register) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+                    .height(55.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+            ) {
+                Text("Crear Cuenta", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(60.dp))
+        }
     }
 }
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun HomeScreenPreview() {
-    // 1. Instanciamos un ViewModel de prueba
     val viewModelDePrueba = MainViewModel()
-
-    // 2. Envolvemos la llamada en tu tema de GgShop
     GgShopTheme {
-        // 3. Llamamos a la función pasando el ViewModel
         HomeScreen(viewModel = viewModelDePrueba)
     }
 }
