@@ -222,11 +222,3 @@ private fun BottomNavBarPrincipal(
         )
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun EditarUsuarioPreview() {
-    GgShopTheme {
-        EditarUsuario(viewModel = MainViewModel())
-    }
-}

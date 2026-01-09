@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            GgShopTheme { // Tu tema de colores: Blanco, Amarillo y Negro
+            GgShopTheme {
                 AppNavHost()
             }
         }
@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
 fun AppNavHost(viewModel: MainViewModel = viewModel()) {
     val navController = rememberNavController()
 
-    // Lógica idéntica al ejemplo: Escucha los eventos del ViewModel
+
     LaunchedEffect(key1 = Unit) {
         viewModel.navigationEvents.collectLatest { event ->
             when (event) {
@@ -62,7 +62,7 @@ fun AppNavHost(viewModel: MainViewModel = viewModel()) {
             startDestination = Screen.Home.route, // Empieza en "home"
             modifier = Modifier.padding(innerPadding)
         ) {
-            // Rutas de navegación idénticas a Rosa Pastel
+
             composable(route = Screen.Home.route) {
                 HomeScreen(viewModel = viewModel)
             }
@@ -76,7 +76,7 @@ fun AppNavHost(viewModel: MainViewModel = viewModel()) {
                 PantallaPrincipal(viewModel = viewModel)
             }
             composable(route = Screen.Stores.route) {
-                Sucursales(viewModel = viewModel) // Aquí llamas a la pantalla del mapa que creamos
+                Sucursales(viewModel = viewModel)
             }
 
             composable(route = Screen.Profile.route) {

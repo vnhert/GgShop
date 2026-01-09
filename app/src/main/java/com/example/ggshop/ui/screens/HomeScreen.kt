@@ -104,11 +104,3 @@ fun HomeScreen(viewModel: MainViewModel) {
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun HomeScreenPreview() {
-    val viewModelDePrueba = MainViewModel()
-    GgShopTheme {
-        HomeScreen(viewModel = viewModelDePrueba)
-    }
-}

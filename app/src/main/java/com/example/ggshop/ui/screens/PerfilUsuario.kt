@@ -238,10 +238,3 @@ private fun BottomNavBarPrincipal(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PerfilUsuarioPreview() {
-    GgShopTheme {
-        PerfilUsuario(viewModel = MainViewModel())
-    }
-}

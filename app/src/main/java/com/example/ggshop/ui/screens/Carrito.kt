@@ -205,10 +205,11 @@ private fun BottomNavBarPrincipal(
 @Composable
 fun Carrito(viewModel: MainViewModel) {
     var itemNavSeleccionado by remember { mutableStateOf("Cart") }
+    // Este collectAsState requiere el import de 'getValue'
     val carrito by viewModel.carrito.collectAsState()
 
     val total = carrito.sumOf {
-        (it.producto.precio.toString().toDoubleOrNull() ?: 0.0) * it.cantidad
+        (it.producto.precio.toDouble()) * it.cantidad
     }
     val totalTexto = "$${"%,.0f".format(total)}"
 
@@ -237,28 +238,28 @@ fun Carrito(viewModel: MainViewModel) {
                 CartItemRow(
                     item = item,
                     onIncrement = {
+                        // Usamos ?: 0L para asegurar que sea un Long no nulo
                         viewModel.actualizarCantidad(
-                            productoId = (item.producto.id ?: 0L).toInt(),
+                            productoId = item.producto.id ?: 0L,
                             nuevaCantidad = item.cantidad + 1
                         )
                     },
                     onDecrement = {
                         if (item.cantidad > 1) {
                             viewModel.actualizarCantidad(
-                                productoId = (item.producto.id ?: 0L).toInt(),
+                                productoId = item.producto.id ?: 0L,
                                 nuevaCantidad = item.cantidad - 1
                             )
                         }
                     },
                     onDelete = {
-                        viewModel.eliminarDelCarrito((item.producto.id ?: 0L).toInt())
+                        viewModel.eliminarDelCarrito(item.producto.id ?: 0L)
                     }
                 )
             }
         }
     }
 }
-
 // --- ITEM DE LA LISTA ---
 
 @Composable

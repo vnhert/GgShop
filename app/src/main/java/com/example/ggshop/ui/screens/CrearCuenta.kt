@@ -30,7 +30,7 @@ private val TechBlack = Color(0xFF000000)
 @Composable
 fun CrearCuenta(viewModel: MainViewModel) {
 
-    // Estados idénticos a Rosa Pastel
+
     var nombre by remember { mutableStateOf("") }
     var correo by remember { mutableStateOf("") }
     var direccion by remember { mutableStateOf("") }
