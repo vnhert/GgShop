@@ -65,10 +65,42 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun cargarProductos() {
         val listaManual = listOf(
-            Producto(1L, "Logitech G502 Hero", "Sensor HERO 25K, 11 botones.", 49990, 15, "https://www.pcfactory.cl/public/foto/32824/1_500.jpg", "GAMING"),
-            Producto(2L, "Teclado Redragon Kumara", "Mecánico TKL, switches Blue.", 32990, 8, "https://www.pcfactory.cl/public/foto/28362/1_500.jpg", "GAMING"),
-            Producto(3L, "Apple iPhone 15 128GB", "Chip A16 Bionic, cámara 48 MP.", 799990, 5, "https://www.pcfactory.cl/public/foto/49504/1_500.jpg", "CELULARES"),
-            Producto(4L, "Samsung Galaxy S24 Ultra", "Pantalla QHD+ y S-Pen.", 1199990, 3, "https://www.pcfactory.cl/public/foto/50257/1_500.jpg", "CELULARES")
+            Producto(
+                1L,
+                "Logitech G502 Hero",
+                "Sensor HERO 25K, 11 botones.",
+                49990,
+                15,
+                R.drawable.mouse, // Nombre de tu archivo en drawable (sin .jpg)
+                "GAMING"
+            ),
+            Producto(
+                2L,
+                "Teclado Redragon Kumara",
+                "Mecánico TKL, switches Blue.",
+                32990,
+                8,
+                R.drawable.teclado,
+                "GAMING"
+            ),
+            Producto(
+                3L,
+                "Apple iPhone 15 128GB",
+                "Chip A16 Bionic, cámara 48 MP.",
+                799990,
+                5,
+                R.drawable.iphone,
+                "CELULARES"
+            ),
+            Producto(
+                4L,
+                "Samsung Galaxy S24 Ultra",
+                "Pantalla QHD+ y S-Pen.",
+                1199990,
+                3,
+                R.drawable.samsung,
+                "CELULARES"
+            )
         )
         _productos.value = listaManual
     }
