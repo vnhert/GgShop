@@ -83,6 +83,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 R.drawable.teclado,
                 "GAMING"
             ),
+            Producto(5L, "Audífonos HyperX Cloud II",
+                "Sonido Surround 7.1, Memory Foam.",
+                85990, 10,
+                R.drawable.audi,
+                "GAMING"),
+            Producto(6L, "Monitor ASUS TUF 27\"", "165Hz, 1ms, Panel IPS.", 249990, 4, R.drawable.moni, "GAMING"),
+            Producto(7L, "Mousepad SteelSeries QcK", "Superficie de tela micro-tejida.", 15990, 20, R.drawable.mousepad, "GAMING"),
+            Producto(8L, "Silla Gamer Corsair T3", "Ergonómica, cuero sintético.", 299990, 2, R.drawable.silla, "GAMING"),
             Producto(
                 3L,
                 "Apple iPhone 15 128GB",
