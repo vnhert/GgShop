@@ -35,8 +35,8 @@ import com.example.ggshop.viewmodel.MainViewModel
 fun EditarUsuario(viewModel: MainViewModel = viewModel()) {
 
     // Datos de ejemplo (Luego los traerás de tu base de datos)
-    val nombre = "Gamer Pro"
-    val correo = "gg.gamer@ggshop.com"
+    val nombre = "Kanye west"
+    val correo = "ye.gamer@ggshop.com"
     val contrasena = "************"
     val direccion = "Tech Avenue 404, Silicon Valley"
 

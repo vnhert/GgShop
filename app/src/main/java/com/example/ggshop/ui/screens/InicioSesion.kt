@@ -1,5 +1,6 @@
 package com.example.ggshop.ui.screens
 
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -13,24 +14,43 @@ import androidx.compose.ui.unit.dp
 import com.example.ggshop.navigation.Screen
 import com.example.ggshop.viewmodel.MainViewModel
 
-@Composable
 
+
+@Composable
 fun InicioSesion(viewModel: MainViewModel) {
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
     val isLoginValid by viewModel.isLoginValid.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-        Text("Bienvenido", style = MaterialTheme.typography.headlineLarge)
+    // Estado para manejar el error de credenciales incorrectas
+    var loginError by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Bienvenido a GgShop",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold
+        )
 
         Spacer(modifier = Modifier.height(40.dp))
 
         // Campo Email
         OutlinedTextField(
             value = email,
-            onValueChange = { viewModel.onEmailChange(it) },
+            onValueChange = {
+                viewModel.onEmailChange(it)
+                loginError = false // Resetear error al escribir
+            },
             label = { Text("Email (debe incluir @)") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            isError = loginError
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -38,31 +58,58 @@ fun InicioSesion(viewModel: MainViewModel) {
         // Campo Contraseña
         OutlinedTextField(
             value = password,
-            onValueChange = { viewModel.onPasswordChange(it) },
-            label = { Text("Contraseña (mín. 8 caracteres)") },
+            onValueChange = {
+                viewModel.onPasswordChange(it)
+                loginError = false
+            },
+            label = { Text("Contraseña (mín. 6 caracteres)") },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
-            // Ayuda visual: se pone rojo si es muy corta
-            isError = password.isNotEmpty() && password.length < 8,
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            isError = (password.isNotEmpty() && password.length < 6) || loginError,
             supportingText = {
-                if (password.isNotEmpty() && password.length < 8) {
-                    Text("Faltan ${8 - password.length} caracteres", color = Color.Red)
+                if (password.isNotEmpty() && password.length < 6) {
+                    Text("Faltan ${6 - password.length} caracteres", color = Color.Red)
+                } else if (loginError) {
+                    Text("Credenciales no coinciden con el registro", color = Color.Red)
                 }
             }
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // BOTÓN INGRESAR
         Button(
-            onClick = { viewModel.navigateTo(Screen.MainScreen) },
-            enabled = isLoginValid, // Se habilita SOLO cuando email tiene @ Y pass tiene 8+ letras
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+            onClick = {
+                if (viewModel.validarCredencialesPersistidas()) {
+                    // Si todo está ok, vamos a la pantalla de Inicio
+                    viewModel.navigateTo(Screen.MainScreen)
+                } else {
+                    // Si no coinciden, activamos el error visual
+                    loginError = true
+                }
+            },
+            enabled = isLoginValid,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Black,
-                disabledContainerColor = Color.LightGray
+                contentColor = Color.Yellow,
+                disabledContainerColor = Color.LightGray,
+                disabledContentColor = Color.White
             )
         ) {
-            Text("Ingresar", color = if (isLoginValid) Color.Yellow else Color.White)
+            Text(text = "Ingresar", fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Enlace para ir a registro por si no tiene cuenta
+        TextButton(onClick = { viewModel.navigateTo(Screen.Register) }) {
+            Text("¿No tienes cuenta? Regístrate aquí", color = Color.Gray)
         }
     }
 }

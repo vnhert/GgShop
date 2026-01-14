@@ -29,27 +29,27 @@ private val TechBlack = Color(0xFF000000)
 
 @Composable
 fun CrearCuenta(viewModel: MainViewModel) {
-
-
     var nombre by remember { mutableStateOf("") }
     var correo by remember { mutableStateOf("") }
     var direccion by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
     var repetirContrasena by remember { mutableStateOf("") }
 
+    // Estado para el mensaje de error
+    var mensajeError by remember { mutableStateOf<String?>(null) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()) // Mismo scroll de Rosa Pastel
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Spacer(modifier = Modifier.height(60.dp))
 
         // Logo de GgShop
         Image(
-            painter = painterResource(id = R.drawable.logo_ggshop), // Cambiado a tu logo
+            painter = painterResource(id = R.drawable.logo_ggshop),
             contentDescription = "Logo GgShop",
             modifier = Modifier.size(100.dp),
             contentScale = ContentScale.Fit
@@ -57,7 +57,6 @@ fun CrearCuenta(viewModel: MainViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Título
         Text(
             text = "Crear Cuenta",
             style = MaterialTheme.typography.headlineMedium,
@@ -67,7 +66,18 @@ fun CrearCuenta(viewModel: MainViewModel) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- FORMULARIO ---
+        // MOSTRAR ERROR SI EXISTE
+        mensajeError?.let {
+            Text(
+                text = it,
+                color = Color.Red,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
+        // --- FORMULARIO COMPLETO ---
 
         // Nombre
         Text(
@@ -78,14 +88,13 @@ fun CrearCuenta(viewModel: MainViewModel) {
         )
         TextField(
             value = nombre,
-            onValueChange = { nombre = it },
+            onValueChange = { nombre = it; mensajeError = null },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Ingresa tu nombre", style = MaterialTheme.typography.bodyMedium) },
             singleLine = true,
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = FondoGrisTech,
                 unfocusedContainerColor = FondoGrisTech,
-                disabledContainerColor = FondoGrisTech,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             ),
@@ -103,7 +112,7 @@ fun CrearCuenta(viewModel: MainViewModel) {
         )
         TextField(
             value = correo,
-            onValueChange = { correo = it },
+            onValueChange = { correo = it; mensajeError = null },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Ingresa tu correo electrónico", style = MaterialTheme.typography.bodyMedium) },
             singleLine = true,
@@ -111,7 +120,6 @@ fun CrearCuenta(viewModel: MainViewModel) {
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = FondoGrisTech,
                 unfocusedContainerColor = FondoGrisTech,
-                disabledContainerColor = FondoGrisTech,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             ),
@@ -129,14 +137,13 @@ fun CrearCuenta(viewModel: MainViewModel) {
         )
         TextField(
             value = direccion,
-            onValueChange = { direccion = it },
+            onValueChange = { direccion = it; mensajeError = null },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Ingresa tu dirección", style = MaterialTheme.typography.bodyMedium) },
             singleLine = true,
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = FondoGrisTech,
                 unfocusedContainerColor = FondoGrisTech,
-                disabledContainerColor = FondoGrisTech,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             ),
@@ -154,7 +161,7 @@ fun CrearCuenta(viewModel: MainViewModel) {
         )
         TextField(
             value = contrasena,
-            onValueChange = { contrasena = it },
+            onValueChange = { contrasena = it; mensajeError = null },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Ingresa tu contraseña", style = MaterialTheme.typography.bodyMedium) },
             singleLine = true,
@@ -163,7 +170,6 @@ fun CrearCuenta(viewModel: MainViewModel) {
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = FondoGrisTech,
                 unfocusedContainerColor = FondoGrisTech,
-                disabledContainerColor = FondoGrisTech,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             ),
@@ -181,7 +187,7 @@ fun CrearCuenta(viewModel: MainViewModel) {
         )
         TextField(
             value = repetirContrasena,
-            onValueChange = { repetirContrasena = it },
+            onValueChange = { repetirContrasena = it; mensajeError = null },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Repite tu contraseña", style = MaterialTheme.typography.bodyMedium) },
             singleLine = true,
@@ -190,7 +196,6 @@ fun CrearCuenta(viewModel: MainViewModel) {
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = FondoGrisTech,
                 unfocusedContainerColor = FondoGrisTech,
-                disabledContainerColor = FondoGrisTech,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             ),
@@ -199,12 +204,30 @@ fun CrearCuenta(viewModel: MainViewModel) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Botón Ingresar (Negro con texto Amarillo)
+        // Botón con Lógica de Validación
         Button(
             onClick = {
-                // Logica idéntica al ejemplo
-                println("GgShop Registro -> Nombre: $nombre, Correo: $correo")
-                viewModel.navigateTo(Screen.Login)
+                val emailValido = android.util.Patterns.EMAIL_ADDRESS.matcher(correo).matches()
+
+                when {
+                    nombre.isBlank() || correo.isBlank() || direccion.isBlank() || contrasena.isBlank() -> {
+                        mensajeError = "Por favor, completa todos los campos."
+                    }
+                    !emailValido -> {
+                        mensajeError = "El formato del correo no es válido (ejemplo@gmail.com)."
+                    }
+                    contrasena.length < 6 -> {
+                        mensajeError = "La contraseña debe tener al menos 6 caracteres."
+                    }
+                    contrasena != repetirContrasena -> {
+                        mensajeError = "Las contraseñas no coinciden."
+                    }
+                    else -> {
+                        mensajeError = null
+                        println("GgShop Registro -> Nombre: $nombre, Correo: $correo")
+                        viewModel.navigateTo(Screen.Login)
+                    }
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -216,7 +239,7 @@ fun CrearCuenta(viewModel: MainViewModel) {
             )
         ) {
             Text(
-                text = "Ingresar",
+                text = "Crear Cuenta",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -224,9 +247,8 @@ fun CrearCuenta(viewModel: MainViewModel) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Footer adaptado a GgShop
         Text(
-            text = "© 2025 GgShop Technology. Todos los derechos reservados.",
+            text = "© 2026 GgShop Technology. Todos los derechos reservados.",
             style = MaterialTheme.typography.labelSmall,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(vertical = 24.dp),
@@ -234,3 +256,4 @@ fun CrearCuenta(viewModel: MainViewModel) {
         )
     }
 }
+
