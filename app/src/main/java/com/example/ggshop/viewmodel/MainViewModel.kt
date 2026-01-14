@@ -65,50 +65,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun cargarProductos() {
         val listaManual = listOf(
-            Producto(
-                1L,
-                "Logitech G502 Hero",
-                "Sensor HERO 25K, 11 botones.",
-                49990,
-                15,
-                R.drawable.mouse, // Nombre de tu archivo en drawable (sin .jpg)
-                "GAMING"
-            ),
-            Producto(
-                2L,
-                "Teclado Redragon Kumara",
-                "Mecánico TKL, switches Blue.",
-                32990,
-                8,
-                R.drawable.teclado,
-                "GAMING"
-            ),
-            Producto(5L, "Audífonos HyperX Cloud II",
-                "Sonido Surround 7.1, Memory Foam.",
-                85990, 10,
-                R.drawable.audi,
-                "GAMING"),
+            // --- CATEGORÍA GAMING ---
+            Producto(1L, "Logitech G502 Hero", "Sensor HERO 25K, 11 botones.", 49990, 15, R.drawable.mousee, "GAMING"),
+            Producto(2L, "Teclado Redragon Kumara", "Mecánico TKL, switches Blue.", 32990, 8, R.drawable.teclado, "GAMING"),
+            Producto(5L, "Audífonos HyperX Cloud II", "Sonido Surround 7.1, Memory Foam.", 85990, 10, R.drawable.audi, "GAMING"),
             Producto(6L, "Monitor ASUS TUF 27\"", "165Hz, 1ms, Panel IPS.", 249990, 4, R.drawable.moni, "GAMING"),
             Producto(7L, "Mousepad SteelSeries QcK", "Superficie de tela micro-tejida.", 15990, 20, R.drawable.mousepad, "GAMING"),
             Producto(8L, "Silla Gamer Corsair T3", "Ergonómica, cuero sintético.", 299990, 2, R.drawable.silla, "GAMING"),
-            Producto(
-                3L,
-                "Apple iPhone 15 128GB",
-                "Chip A16 Bionic, cámara 48 MP.",
-                799990,
-                5,
-                R.drawable.iphone,
-                "CELULARES"
-            ),
-            Producto(
-                4L,
-                "Samsung Galaxy S24 Ultra",
-                "Pantalla QHD+ y S-Pen.",
-                1199990,
-                3,
-                R.drawable.samsung,
-                "CELULARES"
-            )
+
+            // --- CATEGORÍA CELULARES ---
+            Producto(3L, "Apple iPhone 15 128GB", "Chip A16 Bionic, cámara 48 MP.", 799990, 5, R.drawable.iphone, "CELULARES"),
+            Producto(4L, "Samsung Galaxy S24 Ultra", "Pantalla QHD+ y S-Pen.", 1199990, 3, R.drawable.samsung, "CELULARES"),
+            Producto(10L, "Google Pixel 8 Pro", "IA de Google, mejor cámara nocturna.", 899990, 4, R.drawable.google, "CELULARES"),
+            Producto(11L, "Motorola Edge 40 Neo", "Pantalla curva 144Hz, IP68.", 279990, 7, R.drawable.motorola, "CELULARES"),
+            Producto(12L, "Nothing Phone (2)", "Interfaz Glyph, diseño transparente.", 549990, 6, R.drawable.nothing, "CELULARES"),
+            Producto(13L, "Xiaomi 13T Pro", "Lente Leica, carga ultra rápida 120W.", 599990, 9, R.drawable.xiaomi, "CELULARES")
         )
         _productos.value = listaManual
     }
