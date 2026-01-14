@@ -11,6 +11,7 @@ import com.example.ggshop.navigation.NavigationEvent
 import com.example.ggshop.navigation.Screen
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import android.net.Uri
 
 data class CartItem(
     val producto: Producto,
@@ -161,4 +162,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
         _carrito.value = items
     }
+
+    private val _profileImageUri = MutableStateFlow<Uri?>(null)
+    val profileImageUri: StateFlow<Uri?> = _profileImageUri.asStateFlow()
+
+    fun updateProfileImage(uri: Uri?) {
+        _profileImageUri.value = uri
+    }
+
+
+
 }
