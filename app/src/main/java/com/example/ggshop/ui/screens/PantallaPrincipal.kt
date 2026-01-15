@@ -126,7 +126,7 @@ private fun ContenidoTech(viewModel: MainViewModel, productos: List<Producto>, t
         // --- CARRUSEL DINÁMICO ---
         Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
             Image(
-                painter = painterResource(id = if (tabSeleccionada == 0) R.drawable.carrusel else R.drawable.carrusel2),
+                painter = painterResource(id = if (tabSeleccionada == 0) R.drawable.setup else R.drawable.carrusel2),
                 contentDescription = "Banner",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
