@@ -1,9 +1,12 @@
 package com.example.ggshop.ui.screens
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -93,6 +97,11 @@ private fun TopBarPrincipal(
     onToggleBusqueda: () -> Unit,
     onTextoChange: (String) -> Unit
 ) {
+    // Lógica para animación de escala en el botón de salida
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (isPressed) 0.8f else 1f, label = "logoutScale")
+
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
         title = {
@@ -142,9 +151,26 @@ private fun TopBarPrincipal(
             IconButton(onClick = onToggleBusqueda) {
                 Icon(if (estaBuscando) Icons.Default.Close else Icons.Default.Search, null, tint = TechBlack)
             }
+
             if (!estaBuscando) {
                 IconButton(onClick = { viewModel.navigateTo(Screen.Cart) }) {
                     Icon(Icons.Default.ShoppingCart, null, tint = TechBlack)
+                }
+
+                // --- BOTÓN DE CERRAR SESIÓN (Logout) ---
+                IconButton(
+                    onClick = { viewModel.navigateTo(Screen.Home) },
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    },
+                    interactionSource = interactionSource
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ExitToApp,
+                        contentDescription = "Cerrar Sesión",
+                        tint = Color.Red
+                    )
                 }
             }
         }
@@ -196,7 +222,8 @@ private fun ContenidoTech(
                 productosFiltrados.chunked(2).forEach { fila ->
                     Row(modifier = Modifier.fillMaxWidth()) {
                         fila.forEach { producto ->
-                            Box(modifier = Modifier.weight(1f)) {
+                            Box(modifier = Modifier.weight(1f).padding(4.dp)) {
+                                // Aquí asumo que tienes tu ProductoCard definida
                                 ProductoCard(producto = producto, viewModel = viewModel)
                             }
                         }
@@ -211,7 +238,14 @@ private fun ContenidoTech(
 @Composable
 private fun PromoBanner() {
     Surface(color = TechYellow, modifier = Modifier.fillMaxWidth()) {
-        Text("ENVÍO GRATIS COMPRANDO HOY", color = TechBlack, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+        Text(
+            text = "ENVÍO GRATIS COMPRANDO HOY",
+            color = TechBlack,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(vertical = 8.dp),
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp
+        )
     }
 }
 
@@ -220,26 +254,45 @@ private fun TabsTech(tabSeleccionada: Int, onTabSelected: (Int) -> Unit) {
     TabRow(
         selectedTabIndex = tabSeleccionada,
         containerColor = Color.White,
-        indicator = { tabPositions -> TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(tabPositions[tabSeleccionada]), color = TechYellow) }
+        indicator = { tabPositions ->
+            TabRowDefaults.SecondaryIndicator(
+                Modifier.tabIndicatorOffset(tabPositions[tabSeleccionada]),
+                color = TechYellow
+            )
+        }
     ) {
         listOf("GAMING", "CELULARES").forEachIndexed { index, title ->
-            Tab(selected = tabSeleccionada == index, onClick = { onTabSelected(index) }, text = { Text(title, fontWeight = FontWeight.Bold) })
+            Tab(
+                selected = tabSeleccionada == index,
+                onClick = { onTabSelected(index) },
+                text = { Text(title, fontWeight = FontWeight.Bold) }
+            )
         }
     }
 }
 
 @Composable
-private fun BottomNavBarPrincipal(viewModel: MainViewModel, itemSeleccionado: String, onItemSeleccionado: (String) -> Unit) {
+private fun BottomNavBarPrincipal(
+    viewModel: MainViewModel,
+    itemSeleccionado: String,
+    onItemSeleccionado: (String) -> Unit
+) {
     NavigationBar(containerColor = Color.White) {
         NavigationBarItem(
             selected = itemSeleccionado == "Home",
-            onClick = { onItemSeleccionado("Home"); viewModel.navigateTo(Screen.MainScreen) },
+            onClick = {
+                onItemSeleccionado("Home")
+                viewModel.navigateTo(Screen.MainScreen)
+            },
             icon = { Icon(Icons.Default.Home, null) },
             label = { Text("Inicio") }
         )
         NavigationBarItem(
             selected = itemSeleccionado == "Profile",
-            onClick = { onItemSeleccionado("Profile"); viewModel.navigateTo(Screen.Profile) },
+            onClick = {
+                onItemSeleccionado("Profile")
+                viewModel.navigateTo(Screen.Profile)
+            },
             icon = { Icon(Icons.Outlined.Person, null) },
             label = { Text("Perfil") }
         )
