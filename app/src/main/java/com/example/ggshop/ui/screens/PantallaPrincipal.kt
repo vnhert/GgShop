@@ -1,7 +1,7 @@
 package com.example.ggshop.ui.screens
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -114,7 +114,7 @@ private fun TopBarPrincipal(
                     exit = fadeOut() + shrinkHorizontally()
                 ) {
                     IconButton(onClick = onToggleBusqueda) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = null, tint = TechBlack)
+                        Icon(Icons.Default.ArrowBack, null, tint = TechBlack)
                     }
                 }
 
@@ -219,10 +219,24 @@ private fun ContenidoTech(
             if (productosFiltrados.isEmpty()) {
                 Text("No se encontraron productos", modifier = Modifier.padding(16.dp), color = Color.Gray)
             } else {
-                productosFiltrados.chunked(2).forEach { fila ->
+                productosFiltrados.chunked(2).forEachIndexed { indexFila, fila ->
                     Row(modifier = Modifier.fillMaxWidth()) {
                         fila.forEach { producto ->
-                            Box(modifier = Modifier.weight(1f).padding(4.dp)) {
+                            var animado by remember(categoriaBuscada, query) { mutableStateOf(false) }
+
+                            LaunchedEffect(categoriaBuscada, query) {
+                                animado = true
+                            }
+
+                            AnimatedVisibility(
+                                visible = animado,
+                                enter = fadeIn(animationSpec = tween(600, delayMillis = indexFila * 100)) +
+                                        slideInVertically(
+                                            initialOffsetY = { 40 },
+                                            animationSpec = tween(600, delayMillis = indexFila * 100)
+                                        ),
+                                modifier = Modifier.weight(1f).padding(4.dp)
+                            ) {
                                 ProductoCard(producto = producto, viewModel = viewModel)
                             }
                         }
@@ -247,11 +261,27 @@ private fun TabsTech(tabSeleccionada: Int, onTabSelected: (Int) -> Unit) {
         selectedTabIndex = tabSeleccionada,
         containerColor = Color.White,
         indicator = { tabPositions ->
-            TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(tabPositions[tabSeleccionada]), color = TechYellow)
+            TabRowDefaults.SecondaryIndicator(
+                Modifier.tabIndicatorOffset(tabPositions[tabSeleccionada]),
+                color = TechYellow
+            )
         }
     ) {
         listOf("GAMING", "CELULARES").forEachIndexed { index, title ->
-            Tab(selected = tabSeleccionada == index, onClick = { onTabSelected(index) }, text = { Text(title, fontWeight = FontWeight.Bold) })
+            val interactionSource = remember { MutableInteractionSource() }
+            val isPressed by interactionSource.collectIsPressedAsState()
+            val scale by animateFloatAsState(if (isPressed) 0.95f else 1f)
+
+            Tab(
+                selected = tabSeleccionada == index,
+                onClick = { onTabSelected(index) },
+                interactionSource = interactionSource,
+                modifier = Modifier.graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                },
+                text = { Text(title, fontWeight = FontWeight.Bold) }
+            )
         }
     }
 }
