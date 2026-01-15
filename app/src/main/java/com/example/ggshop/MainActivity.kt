@@ -59,7 +59,7 @@ fun AppNavHost(viewModel: MainViewModel = viewModel()) {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route, // Empieza en "home"
+            startDestination = Screen.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
 
@@ -96,4 +96,6 @@ fun AppNavHost(viewModel: MainViewModel = viewModel()) {
             }
         }
     }
+
+
 }
