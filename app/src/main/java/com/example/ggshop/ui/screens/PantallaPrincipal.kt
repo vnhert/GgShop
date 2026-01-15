@@ -97,7 +97,6 @@ private fun TopBarPrincipal(
     onToggleBusqueda: () -> Unit,
     onTextoChange: (String) -> Unit
 ) {
-    // Lógica para animación de escala en el botón de salida
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (isPressed) 0.8f else 1f, label = "logoutScale")
@@ -105,42 +104,50 @@ private fun TopBarPrincipal(
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
         title = {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 AnimatedVisibility(
                     visible = estaBuscando,
                     enter = fadeIn() + expandHorizontally(),
                     exit = fadeOut() + shrinkHorizontally()
                 ) {
-                    TextField(
-                        value = textoBusqueda,
-                        onValueChange = onTextoChange,
-                        placeholder = { Text("Buscar en GGSHOP...") },
-                        modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
-                        singleLine = true,
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            cursorColor = TechYellow,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        )
-                    )
+                    IconButton(onClick = onToggleBusqueda) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = null, tint = TechBlack)
+                    }
                 }
 
-                AnimatedVisibility(
-                    visible = !estaBuscando,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Settings, null, Modifier.size(32.dp), TechYellow)
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.clickable { viewModel.navigateTo(Screen.Stores) }) {
-                            Text("GGSHOP", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = TechBlack)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.LocationOn, null, Modifier.size(12.dp), Color.Gray)
-                                Spacer(Modifier.width(4.dp))
-                                Text("Sucursales y puntos de retiro", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Box(modifier = Modifier.weight(1f)) {
+                    if (estaBuscando) {
+                        TextField(
+                            value = textoBusqueda,
+                            onValueChange = onTextoChange,
+                            placeholder = { Text("Buscar en GGSHOP...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                cursorColor = TechYellow,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            )
+                        )
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable { viewModel.navigateTo(Screen.Stores) }
+                        ) {
+                            Icon(Icons.Default.Settings, null, Modifier.size(32.dp), TechYellow)
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text("GGSHOP", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = TechBlack)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.LocationOn, null, Modifier.size(12.dp), Color.Gray)
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Sucursales", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                }
                             }
                         }
                     }
@@ -148,16 +155,13 @@ private fun TopBarPrincipal(
             }
         },
         actions = {
-            IconButton(onClick = onToggleBusqueda) {
+            IconButton(onClick = if (estaBuscando) { { onTextoChange("") } } else onToggleBusqueda) {
                 Icon(if (estaBuscando) Icons.Default.Close else Icons.Default.Search, null, tint = TechBlack)
             }
-
             if (!estaBuscando) {
                 IconButton(onClick = { viewModel.navigateTo(Screen.Cart) }) {
                     Icon(Icons.Default.ShoppingCart, null, tint = TechBlack)
                 }
-
-                // --- BOTÓN DE CERRAR SESIÓN (Logout) ---
                 IconButton(
                     onClick = { viewModel.navigateTo(Screen.Home) },
                     modifier = Modifier.graphicsLayer {
@@ -166,11 +170,7 @@ private fun TopBarPrincipal(
                     },
                     interactionSource = interactionSource
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.ExitToApp,
-                        contentDescription = "Cerrar Sesión",
-                        tint = Color.Red
-                    )
+                    Icon(Icons.Default.ExitToApp, null, tint = Color.Red)
                 }
             }
         }
@@ -223,7 +223,6 @@ private fun ContenidoTech(
                     Row(modifier = Modifier.fillMaxWidth()) {
                         fila.forEach { producto ->
                             Box(modifier = Modifier.weight(1f).padding(4.dp)) {
-                                // Aquí asumo que tienes tu ProductoCard definida
                                 ProductoCard(producto = producto, viewModel = viewModel)
                             }
                         }
@@ -238,14 +237,7 @@ private fun ContenidoTech(
 @Composable
 private fun PromoBanner() {
     Surface(color = TechYellow, modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = "ENVÍO GRATIS COMPRANDO HOY",
-            color = TechBlack,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(vertical = 8.dp),
-            fontWeight = FontWeight.Bold,
-            fontSize = 12.sp
-        )
+        Text("ENVÍO GRATIS COMPRANDO HOY", color = TechBlack, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp)
     }
 }
 
@@ -255,44 +247,27 @@ private fun TabsTech(tabSeleccionada: Int, onTabSelected: (Int) -> Unit) {
         selectedTabIndex = tabSeleccionada,
         containerColor = Color.White,
         indicator = { tabPositions ->
-            TabRowDefaults.SecondaryIndicator(
-                Modifier.tabIndicatorOffset(tabPositions[tabSeleccionada]),
-                color = TechYellow
-            )
+            TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(tabPositions[tabSeleccionada]), color = TechYellow)
         }
     ) {
         listOf("GAMING", "CELULARES").forEachIndexed { index, title ->
-            Tab(
-                selected = tabSeleccionada == index,
-                onClick = { onTabSelected(index) },
-                text = { Text(title, fontWeight = FontWeight.Bold) }
-            )
+            Tab(selected = tabSeleccionada == index, onClick = { onTabSelected(index) }, text = { Text(title, fontWeight = FontWeight.Bold) })
         }
     }
 }
 
 @Composable
-private fun BottomNavBarPrincipal(
-    viewModel: MainViewModel,
-    itemSeleccionado: String,
-    onItemSeleccionado: (String) -> Unit
-) {
+private fun BottomNavBarPrincipal(viewModel: MainViewModel, itemSeleccionado: String, onItemSeleccionado: (String) -> Unit) {
     NavigationBar(containerColor = Color.White) {
         NavigationBarItem(
             selected = itemSeleccionado == "Home",
-            onClick = {
-                onItemSeleccionado("Home")
-                viewModel.navigateTo(Screen.MainScreen)
-            },
+            onClick = { onItemSeleccionado("Home"); viewModel.navigateTo(Screen.MainScreen) },
             icon = { Icon(Icons.Default.Home, null) },
             label = { Text("Inicio") }
         )
         NavigationBarItem(
             selected = itemSeleccionado == "Profile",
-            onClick = {
-                onItemSeleccionado("Profile")
-                viewModel.navigateTo(Screen.Profile)
-            },
+            onClick = { onItemSeleccionado("Profile"); viewModel.navigateTo(Screen.Profile) },
             icon = { Icon(Icons.Outlined.Person, null) },
             label = { Text("Perfil") }
         )
