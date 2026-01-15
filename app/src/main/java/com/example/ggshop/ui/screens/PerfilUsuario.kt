@@ -114,7 +114,7 @@ fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
                     Icon(Icons.Default.Star, contentDescription = null, tint = TechYellow)
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "READY FOR THE NEXT LEVEL?",
+                        text = "LISTO PARA EL SIGUIENTE NIVEL?",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
@@ -126,7 +126,7 @@ fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
 
             // CONFIGURACIONES
             Text(
-                text = "SETTINGS",
+                text = "CONFIGURACION",
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
                 color = Color.Gray,
@@ -138,13 +138,13 @@ fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
             // ITEMS DE AJUSTES
             SettingsItem(
                 icon = Icons.Default.Edit,
-                text = "Edit Profile",
+                text = "Editar Perfil",
                 onClick = { viewModel.navigateTo(Screen.EditProfile) }
             )
-            SettingsItem(icon = Icons.Default.Settings, text = "App Preferences")
-            SettingsItem(icon = Icons.Default.Notifications, text = "Alerts & Drops")
-            SettingsItem(icon = Icons.Default.Lock, text = "Privacy & Security")
-            SettingsItem(icon = Icons.Default.Info, text = "About GGShop")
+            SettingsItem(icon = Icons.Default.Settings, text = "Preferencias")
+            SettingsItem(icon = Icons.Default.Notifications, text = "Alertas y drops")
+            SettingsItem(icon = Icons.Default.Lock, text = "Privacidad y seguridad")
+            SettingsItem(icon = Icons.Default.Info, text = "Acerca de GGShop")
 
             Spacer(modifier = Modifier.height(40.dp))
         }
@@ -160,7 +160,7 @@ private fun TopBarPerfil(viewModel: MainViewModel) {
         },
         navigationIcon = {
             IconButton(onClick = { viewModel.navigateTo(Screen.MainScreen) }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                Icon(Icons.Default.ArrowBack, contentDescription = "Atras")
             }
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
