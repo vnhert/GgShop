@@ -54,9 +54,9 @@ fun HomeScreen(viewModel: MainViewModel) {
             Spacer(modifier = Modifier.weight(1f))
 
             Image(
-                painter = painterResource(id = R.drawable.logo_ggshop),
+                painter = painterResource(id = R.drawable.logo),
                 contentDescription = "Logo GgShop",
-                modifier = Modifier.size(180.dp),
+                modifier = Modifier.size(300.dp),
                 contentScale = ContentScale.Fit
             )
 
@@ -100,7 +100,21 @@ fun HomeScreen(viewModel: MainViewModel) {
             }
 
             Spacer(modifier = Modifier.height(60.dp))
+
+
+            Text(
+                text = "© 2026 GgShop. Todos los derechos reservados.",
+                color = Color(0xFFFFD700), // Amarillo Tech
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 20.dp)
+            )
         }
     }
+
+
+
+
 }
 

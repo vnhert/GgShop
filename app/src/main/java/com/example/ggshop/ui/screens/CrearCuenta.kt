@@ -49,7 +49,7 @@ fun CrearCuenta(viewModel: MainViewModel) {
 
         // Logo de GgShop
         Image(
-            painter = painterResource(id = R.drawable.logo_ggshop),
+            painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo GgShop",
             modifier = Modifier.size(100.dp),
             contentScale = ContentScale.Fit
