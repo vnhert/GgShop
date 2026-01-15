@@ -1,5 +1,6 @@
 package com.example.ggshop.ui.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -95,31 +96,43 @@ private fun TopBarPrincipal(
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
         title = {
-            if (estaBuscando) {
-                TextField(
-                    value = textoBusqueda,
-                    onValueChange = onTextoChange,
-                    placeholder = { Text("Buscar en GGSHOP...") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        cursorColor = TechYellow,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+                AnimatedVisibility(
+                    visible = estaBuscando,
+                    enter = fadeIn() + expandHorizontally(),
+                    exit = fadeOut() + shrinkHorizontally()
+                ) {
+                    TextField(
+                        value = textoBusqueda,
+                        onValueChange = onTextoChange,
+                        placeholder = { Text("Buscar en GGSHOP...") },
+                        modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            cursorColor = TechYellow,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        )
                     )
-                )
-            } else {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Settings, null, Modifier.size(32.dp), TechYellow)
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.clickable { viewModel.navigateTo(Screen.Stores) }) {
-                        Text("GGSHOP", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = TechBlack)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.LocationOn, null, Modifier.size(12.dp), Color.Gray)
-                            Spacer(Modifier.width(4.dp))
-                            Text("Sucursales y puntos de retiro", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                }
+
+                AnimatedVisibility(
+                    visible = !estaBuscando,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Settings, null, Modifier.size(32.dp), TechYellow)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.clickable { viewModel.navigateTo(Screen.Stores) }) {
+                            Text("GGSHOP", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = TechBlack)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.LocationOn, null, Modifier.size(12.dp), Color.Gray)
+                                Spacer(Modifier.width(4.dp))
+                                Text("Sucursales y puntos de retiro", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            }
                         }
                     }
                 }
