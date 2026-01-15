@@ -1,6 +1,4 @@
 package com.example.ggshop.ui.screens
-// Verifica que este sea tu package
-
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,17 +14,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
 import com.example.ggshop.R
 import com.example.ggshop.data.Producto
 import com.example.ggshop.navigation.Screen
@@ -39,6 +34,8 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 fun PantallaPrincipal(viewModel: MainViewModel = viewModel()) {
     var tabSeleccionada by remember { mutableIntStateOf(0) }
     var itemNavSeleccionado by remember { mutableStateOf("Home") }
+    var estaBuscando by remember { mutableStateOf(false) }
+    var textoBusqueda by remember { mutableStateOf("") }
     val productos by viewModel.productos.collectAsState()
 
     LaunchedEffect(Unit) {
@@ -46,7 +43,18 @@ fun PantallaPrincipal(viewModel: MainViewModel = viewModel()) {
     }
 
     Scaffold(
-        topBar = { TopBarPrincipal(viewModel = viewModel) },
+        topBar = {
+            TopBarPrincipal(
+                viewModel = viewModel,
+                estaBuscando = estaBuscando,
+                textoBusqueda = textoBusqueda,
+                onToggleBusqueda = {
+                    estaBuscando = !estaBuscando
+                    if (!estaBuscando) textoBusqueda = ""
+                },
+                onTextoChange = { textoBusqueda = it }
+            )
+        },
         bottomBar = {
             BottomNavBarPrincipal(
                 viewModel = viewModel,
@@ -65,11 +73,11 @@ fun PantallaPrincipal(viewModel: MainViewModel = viewModel()) {
             PromoBanner()
             TabsTech(tabSeleccionada = tabSeleccionada, onTabSelected = { tabSeleccionada = it })
 
-            // Renderiza el carrusel y las cards
             ContenidoTech(
                 viewModel = viewModel,
                 productos = productos,
-                tabSeleccionada = tabSeleccionada
+                tabSeleccionada = tabSeleccionada,
+                query = textoBusqueda
             )
         }
     }
@@ -77,57 +85,76 @@ fun PantallaPrincipal(viewModel: MainViewModel = viewModel()) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopBarPrincipal(viewModel: MainViewModel) {
+private fun TopBarPrincipal(
+    viewModel: MainViewModel,
+    estaBuscando: Boolean,
+    textoBusqueda: String,
+    onToggleBusqueda: () -> Unit,
+    onTextoChange: (String) -> Unit
+) {
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
         title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Logo",
-                    modifier = Modifier.size(32.dp),
-                    tint = TechYellow
+            if (estaBuscando) {
+                TextField(
+                    value = textoBusqueda,
+                    onValueChange = onTextoChange,
+                    placeholder = { Text("Buscar en GGSHOP...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        cursorColor = TechYellow,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
                 )
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // --- SUCURSALES (FUNCIONAL) ---
-                Column(
-                    modifier = Modifier.clickable { viewModel.navigateTo(Screen.Stores) }
-                ) {
-                    Text(text = "GGSHOP", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = TechBlack)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.LocationOn, null, Modifier.size(12.dp), Color.Gray)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Sucursales y puntos de retiro", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Settings, null, Modifier.size(32.dp), TechYellow)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.clickable { viewModel.navigateTo(Screen.Stores) }) {
+                        Text("GGSHOP", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = TechBlack)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.LocationOn, null, Modifier.size(12.dp), Color.Gray)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Sucursales y puntos de retiro", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        }
                     }
                 }
             }
         },
         actions = {
-            // --- BOTÓN PARA VOLVER AL INICIO (LOGIN/REGISTRO) ---
-            IconButton(onClick = { viewModel.navigateTo(Screen.Login) }) {
-                Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión", tint = TechBlack)
+            IconButton(onClick = onToggleBusqueda) {
+                Icon(if (estaBuscando) Icons.Default.Close else Icons.Default.Search, null, tint = TechBlack)
             }
-            IconButton(onClick = { /* Lógica buscar */ }) { Icon(Icons.Default.Search, null, tint = TechBlack) }
-            IconButton(onClick = { viewModel.navigateTo(Screen.Cart) }) {
-                Icon(Icons.Default.ShoppingCart, null, tint = TechBlack)
+            if (!estaBuscando) {
+                IconButton(onClick = { viewModel.navigateTo(Screen.Cart) }) {
+                    Icon(Icons.Default.ShoppingCart, null, tint = TechBlack)
+                }
             }
         }
     )
 }
 
 @Composable
-private fun ContenidoTech(viewModel: MainViewModel, productos: List<Producto>, tabSeleccionada: Int) {
-    // FILTRAR PRODUCTOS SEGÚN LA TAB SELECCIONADA
+private fun ContenidoTech(
+    viewModel: MainViewModel,
+    productos: List<Producto>,
+    tabSeleccionada: Int,
+    query: String
+) {
     val categoriaBuscada = if (tabSeleccionada == 0) "GAMING" else "CELULARES"
-    val productosFiltrados = productos.filter { it.categoria == categoriaBuscada }
+    val productosFiltrados = productos.filter {
+        it.categoria == categoriaBuscada && it.nombre.contains(query, ignoreCase = true)
+    }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        // --- CARRUSEL DINÁMICO ---
         Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
             Image(
                 painter = painterResource(id = if (tabSeleccionada == 0) R.drawable.setup else R.drawable.carrusel2),
-                contentDescription = "Banner",
+                contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
@@ -143,22 +170,21 @@ private fun ContenidoTech(viewModel: MainViewModel, productos: List<Producto>, t
 
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Destacados en $categoriaBuscada",
+            text = if (query.isEmpty()) "Destacados en $categoriaBuscada" else "Resultados para: $query",
             modifier = Modifier.padding(horizontal = 16.dp),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
 
-        // --- LAS CARDS DE PRODUCTOS FILTRADOS ---
         Column(modifier = Modifier.padding(8.dp)) {
             if (productosFiltrados.isEmpty()) {
-                Text("No hay productos en esta categoría", modifier = Modifier.padding(16.dp), color = Color.Gray)
+                Text("No se encontraron productos", modifier = Modifier.padding(16.dp), color = Color.Gray)
             } else {
                 productosFiltrados.chunked(2).forEach { fila ->
                     Row(modifier = Modifier.fillMaxWidth()) {
                         fila.forEach { producto ->
                             Box(modifier = Modifier.weight(1f)) {
-                                ProductCard(producto = producto, viewModel = viewModel)
+                                ProductoCard(producto = producto, viewModel = viewModel)
                             }
                         }
                         if (fila.size == 1) Spacer(modifier = Modifier.weight(1f))
@@ -169,40 +195,6 @@ private fun ContenidoTech(viewModel: MainViewModel, productos: List<Producto>, t
     }
 }
 
-@Composable
-fun ProductCard(producto: Producto, viewModel: MainViewModel) {
-    Card(
-        modifier = Modifier
-            .padding(6.dp)
-            .fillMaxWidth()
-            .clickable {
-                viewModel.seleccionarProducto(producto)
-                viewModel.navigateTo(Screen.ProductDetail)
-            },
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column {
-            AsyncImage(
-                model = producto.imagenUrl,
-                contentDescription = producto.nombre,
-                modifier = Modifier.fillMaxWidth().height(120.dp).background(Color.White).padding(8.dp),
-                contentScale = ContentScale.Fit
-            )
-            Column(modifier = Modifier.padding(8.dp)) {
-                Text(producto.nombre, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 14.sp)
-                Text("$${producto.precio}", fontWeight = FontWeight.ExtraBold, color = TechBlack)
-                Spacer(Modifier.height(8.dp))
-                Surface(color = TechYellow, shape = RoundedCornerShape(4.dp)) {
-                    Text("VER DETALLES", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 10.sp, fontWeight = FontWeight.Black)
-                }
-            }
-        }
-    }
-}
-
-// --- OTROS COMPONENTES ---
 @Composable
 private fun PromoBanner() {
     Surface(color = TechYellow, modifier = Modifier.fillMaxWidth()) {
