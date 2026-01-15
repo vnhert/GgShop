@@ -104,6 +104,10 @@ private fun TopBarPrincipal(viewModel: MainViewModel) {
             }
         },
         actions = {
+            // --- BOTÓN PARA VOLVER AL INICIO (LOGIN/REGISTRO) ---
+            IconButton(onClick = { viewModel.navigateTo(Screen.Login) }) {
+                Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión", tint = TechBlack)
+            }
             IconButton(onClick = { /* Lógica buscar */ }) { Icon(Icons.Default.Search, null, tint = TechBlack) }
             IconButton(onClick = { viewModel.navigateTo(Screen.Cart) }) {
                 Icon(Icons.Default.ShoppingCart, null, tint = TechBlack)

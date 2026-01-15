@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.sp
 import com.example.ggshop.navigation.Screen
 import com.example.ggshop.viewmodel.MainViewModel
 
-// Colores consistentes con CrearCuenta
+
 private val TechYellow = Color(0xFFFFD700)
 private val TechBlack = Color(0xFF000000)
 
