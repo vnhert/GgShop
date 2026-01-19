@@ -155,7 +155,19 @@ private fun TopBarPrincipal(
             }
         },
         actions = {
-            IconButton(onClick = if (estaBuscando) { { onTextoChange("") } } else onToggleBusqueda) {
+            IconButton(
+                onClick = {
+                    if (estaBuscando) {
+                        if (textoBusqueda.isNotEmpty()) {
+                            onTextoChange("")
+                        } else {
+                            onToggleBusqueda()
+                        }
+                    } else {
+                        onToggleBusqueda()
+                    }
+                }
+            ) {
                 Icon(if (estaBuscando) Icons.Default.Close else Icons.Default.Search, null, tint = TechBlack)
             }
             if (!estaBuscando) {
