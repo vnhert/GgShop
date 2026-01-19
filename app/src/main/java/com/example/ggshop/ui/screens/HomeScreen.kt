@@ -1,12 +1,15 @@
 package com.example.ggshop.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,24 +19,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// IMPORTANTE: Verifica que estos paquetes coincidan con los tuyos
 import com.example.ggshop.R
 import com.example.ggshop.navigation.Screen
 import com.example.ggshop.viewmodel.MainViewModel
-import com.example.ggshop.ui.theme.GgShopTheme
-
 
 @Composable
 fun HomeScreen(viewModel: MainViewModel) {
-    // Usamos Box para que el botón "Omitir" flote en la esquina
+    var isVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // --- BOTÓN OMITIR ---
         TextButton(
-            onClick = { viewModel.navigateTo(Screen.MainScreen) }, // Ajusta "MainScreen" al nombre real en tu Screen class
+            onClick = { viewModel.navigateTo(Screen.MainScreen) },
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
@@ -46,65 +50,81 @@ fun HomeScreen(viewModel: MainViewModel) {
             )
         }
 
-        // --- CONTENIDO ORIGINAL ---
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.weight(1f))
 
-            Image(
-                painter = painterResource(id = R.drawable.logo),
-                contentDescription = "Logo GgShop",
-                modifier = Modifier.size(300.dp),
-                contentScale = ContentScale.Fit
-            )
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = slideInVertically(
+                    initialOffsetY = { 100 },
+                    animationSpec = tween(durationMillis = 800)
+                ) + fadeIn()
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "Logo GgShop",
+                        modifier = Modifier.size(300.dp),
+                        contentScale = ContentScale.Fit
+                    )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "Bienvenido a GgShop",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color.Black
-            )
+                    Text(
+                        text = "Bienvenido a GgShop",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.Black
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Botón Iniciar Sesión (Amarillo)
-            Button(
-                onClick = { viewModel.navigateTo(Screen.Login) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp)
-                    .height(55.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700))
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = slideInVertically(
+                    initialOffsetY = { 200 },
+                    animationSpec = tween(durationMillis = 1000)
+                ) + fadeIn()
             ) {
-                Text("Iniciar Sesión", color = Color.Black, fontWeight = FontWeight.Bold)
-            }
+                Column {
+                    Button(
+                        onClick = { viewModel.navigateTo(Screen.Login) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 32.dp)
+                            .height(55.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700))
+                    ) {
+                        Text("Iniciar Sesión", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón Crear Cuenta (Negro)
-            Button(
-                onClick = { viewModel.navigateTo(Screen.Register) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp)
-                    .height(55.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-            ) {
-                Text("Crear Cuenta", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold)
+                    Button(
+                        onClick = { viewModel.navigateTo(Screen.Register) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 32.dp)
+                            .height(55.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                    ) {
+                        Text("Crear Cuenta", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold)
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(60.dp))
 
-
             Text(
                 text = "© 2026 GgShop. Todos los derechos reservados.",
-                color = Color(0xFFFFD700), // Amarillo Tech
+                color = Color(0xFFFFD700),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -112,9 +132,4 @@ fun HomeScreen(viewModel: MainViewModel) {
             )
         }
     }
-
-
-
-
 }
-

@@ -1,21 +1,23 @@
 package com.example.ggshop.ui.screens
 
-import androidx.compose.foundation.background
-
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.ggshop.data.Producto
 import com.example.ggshop.navigation.Screen
@@ -25,28 +27,49 @@ import com.example.ggshop.viewmodel.MainViewModel
 
 @Composable
 fun ProductoCard(producto: Producto, viewModel: MainViewModel) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    // CAMBIO IMPORTANTE: Usamos 'spring' para que rebote
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.90f else 1f, // Se achica más (al 90%)
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy, // Cuánto rebota
+            stiffness = Spring.StiffnessLow // Velocidad (Low se nota más)
+        ),
+        label = "scaleAnimation"
+    )
+
     Card(
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth()
-            .clickable {
-                // Al tocar, seleccionamos el producto y vamos al detalle
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null
+            ) {
+                // Pequeño truco opcional: Si quisieras retrasar la navegación
+                // para ver la animación, podrías usar un coroutine scope,
+                // pero con el 'spring' debería bastar.
                 viewModel.seleccionarProducto(producto)
                 viewModel.navigateTo(Screen.ProductDetail)
             },
-        shape = RoundedCornerShape(8.dp), // Esquinas menos redondeadas, más "tech"
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF5F5F5) // Gris muy claro para que resalte el negro
+            containerColor = Color(0xFFF5F5F5)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            // IMAGEN DEL GADGET / COMPONENTE
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp)
-                    .background(Color.White) // Fondo blanco para que la foto del producto luzca limpia
+                    .background(Color.White)
             ) {
                 AsyncImage(
                     model = producto.imagenUrl,
@@ -54,11 +77,10 @@ fun ProductoCard(producto: Producto, viewModel: MainViewModel) {
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(8.dp),
-                    contentScale = ContentScale.Fit // Fit es mejor para hardware (se ve el producto completo)
+                    contentScale = ContentScale.Fit
                 )
             }
 
-            // INFO GGSHOP
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     text = producto.nombre,
@@ -80,7 +102,6 @@ fun ProductoCard(producto: Producto, viewModel: MainViewModel) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // BOTÓN DE ACCIÓN RÁPIDA ESTILO GGSHOP
                 Surface(
                     color = TechYellow,
                     shape = RoundedCornerShape(4.dp)
