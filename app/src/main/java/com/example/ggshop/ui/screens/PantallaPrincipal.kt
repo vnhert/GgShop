@@ -97,6 +97,9 @@ private fun TopBarPrincipal(
     onToggleBusqueda: () -> Unit,
     onTextoChange: (String) -> Unit
 ) {
+    // Escuchamos si el usuario actual es Administrador
+    val esAdmin by viewModel.esAdmin.collectAsState()
+
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (isPressed) 0.8f else 1f, label = "logoutScale")
@@ -170,10 +173,23 @@ private fun TopBarPrincipal(
             ) {
                 Icon(if (estaBuscando) Icons.Default.Close else Icons.Default.Search, null, tint = TechBlack)
             }
+
             if (!estaBuscando) {
+                // --- BOTÓN DE PANEL ADMINISTRADOR ---
+                if (esAdmin) {
+                    IconButton(onClick = { viewModel.navigateTo(Screen.Inventory) }) {
+                        Icon(
+                            imageVector = Icons.Default.EditNote,
+                            contentDescription = "Panel Admin",
+                            tint = Color(0xFF2196F3)
+                        )
+                    }
+                }
+
                 IconButton(onClick = { viewModel.navigateTo(Screen.Cart) }) {
                     Icon(Icons.Default.ShoppingCart, null, tint = TechBlack)
                 }
+
                 IconButton(
                     onClick = { viewModel.navigateTo(Screen.Home) },
                     modifier = Modifier.graphicsLayer {
@@ -249,6 +265,7 @@ private fun ContenidoTech(
                                         ),
                                 modifier = Modifier.weight(1f).padding(4.dp)
                             ) {
+                                // Aquí se llama a tu componente de tarjeta de producto
                                 ProductoCard(producto = producto, viewModel = viewModel)
                             }
                         }

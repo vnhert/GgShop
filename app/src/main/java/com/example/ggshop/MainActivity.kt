@@ -94,8 +94,10 @@ fun AppNavHost(viewModel: MainViewModel = viewModel()) {
             composable(route = Screen.Favorites.route){
                 Favoritos(viewModel = viewModel)
             }
+            composable(Screen.Inventory.route) {
+                GestorInventario(viewModel = viewModel)
         }
     }
 
-
+    }
 }

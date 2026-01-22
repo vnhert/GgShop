@@ -3,6 +3,7 @@ package com.example.ggshop.viewmodel
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ggshop.R
@@ -11,7 +12,6 @@ import com.example.ggshop.navigation.NavigationEvent
 import com.example.ggshop.navigation.Screen
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import android.net.Uri
 
 data class CartItem(
     val producto: Producto,
@@ -39,14 +39,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { _navigationEvents.emit(NavigationEvent.NavigateUp) }
     }
 
-    // --- 2. VALIDACIÓN DE LOGIN (CORREGIDO: 6 CARACTERES + EAGERLY) ---
+    // --- 2. VALIDACIÓN DE LOGIN ---
     private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email.asStateFlow()
 
     private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password.asStateFlow()
 
-    // SharingStarted.Eagerly asegura que el botón reaccione al instante
     val isLoginValid: StateFlow<Boolean> = combine(_email, _password) { email, pass ->
         email.contains("@") && email.isNotBlank() && pass.length >= 6
     }.stateIn(
@@ -58,7 +57,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onEmailChange(nuevoEmail: String) { _email.value = nuevoEmail }
     fun onPasswordChange(nuevaPass: String) { _password.value = nuevaPass }
 
-    // --- 3. PERSISTENCIA Y VALIDACIÓN DE USUARIO ---
+    // --- 3. PERSISTENCIA Y ROL DE USUARIO (CORREGIDO) ---
+
+    // El estado de Admin debe estar a nivel de clase, no dentro de una función
+    private val _esAdmin = MutableStateFlow(false)
+    val esAdmin: StateFlow<Boolean> = _esAdmin.asStateFlow()
+
     fun registrarUsuario(nombre: String, correo: String, pass: String, direccion: String) {
         prefs.edit().apply {
             putString("USER_NAME", nombre)
@@ -69,13 +73,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // Función de validación corregida para comparar con SharedPreferences
     fun validarCredencialesPersistidas(): Boolean {
-        val emailGuardado = prefs.getString("USER_EMAIL", null)
-        val passGuardada = prefs.getString("USER_PASS", null)
-        // Si no hay nadie registrado, permitimos pasar para no bloquear el desarrollo,
-        // pero si hay alguien, validamos estrictamente.
-        if (emailGuardado == null) return true
-        return _email.value == emailGuardado && _password.value == passGuardada
+        val emailIngresado = _email.value
+        val passIngresada = _password.value
+
+        // 1. Verificación para el Perfil Administrador (Hardcoded)
+        if (emailIngresado == "admin@ggshop.com" && passIngresada == "admin123") {
+            _esAdmin.value = true
+            return true
+        }
+
+        // 2. Verificación para Usuario Normal (Desde SharedPreferences)
+        val correoGuardado = prefs.getString("USER_EMAIL", "") ?: ""
+        val passGuardada = prefs.getString("USER_PASS", "") ?: ""
+
+        val loginExitoso = (emailIngresado == correoGuardado && passIngresada == passGuardada)
+
+        if (loginExitoso) {
+            _esAdmin.value = false // Si es usuario normal, se asegura que no sea admin
+        }
+
+        return loginExitoso
     }
 
     fun obtenerNombreUsuario(): String = prefs.getString("USER_NAME", "Gamer Pro") ?: "Gamer Pro"
@@ -163,13 +182,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _carrito.value = items
     }
 
+    // --- 7. IMAGEN DE PERFIL ---
     private val _profileImageUri = MutableStateFlow<Uri?>(null)
     val profileImageUri: StateFlow<Uri?> = _profileImageUri.asStateFlow()
 
     fun updateProfileImage(uri: Uri?) {
         _profileImageUri.value = uri
     }
-
-
-
 }
