@@ -23,7 +23,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs: SharedPreferences =
         application.getSharedPreferences("GGShop_Prefs", Context.MODE_PRIVATE)
 
-    // --- 1. NAVEGACIÓN COMPLETA ---
     private val _navigationEvents = MutableSharedFlow<NavigationEvent>()
     val navigationEvents: SharedFlow<NavigationEvent> = _navigationEvents.asSharedFlow()
 
@@ -39,7 +38,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { _navigationEvents.emit(NavigationEvent.NavigateUp) }
     }
 
-    // --- 2. VALIDACIÓN DE LOGIN ---
     private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email.asStateFlow()
 
@@ -57,9 +55,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onEmailChange(nuevoEmail: String) { _email.value = nuevoEmail }
     fun onPasswordChange(nuevaPass: String) { _password.value = nuevaPass }
 
-    // --- 3. PERSISTENCIA Y ROL DE USUARIO (CORREGIDO) ---
-
-    // El estado de Admin debe estar a nivel de clase, no dentro de una función
     private val _esAdmin = MutableStateFlow(false)
     val esAdmin: StateFlow<Boolean> = _esAdmin.asStateFlow()
 
@@ -73,25 +68,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Función de validación corregida para comparar con SharedPreferences
     fun validarCredencialesPersistidas(): Boolean {
         val emailIngresado = _email.value
         val passIngresada = _password.value
 
-        // 1. Verificación para el Perfil Administrador (Hardcoded)
         if (emailIngresado == "admin@ggshop.com" && passIngresada == "admin123") {
             _esAdmin.value = true
             return true
         }
 
-        // 2. Verificación para Usuario Normal (Desde SharedPreferences)
         val correoGuardado = prefs.getString("USER_EMAIL", "") ?: ""
         val passGuardada = prefs.getString("USER_PASS", "") ?: ""
 
         val loginExitoso = (emailIngresado == correoGuardado && passIngresada == passGuardada)
 
         if (loginExitoso) {
-            _esAdmin.value = false // Si es usuario normal, se asegura que no sea admin
+            _esAdmin.value = false
         }
 
         return loginExitoso
@@ -99,7 +91,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun obtenerNombreUsuario(): String = prefs.getString("USER_NAME", "Gamer Pro") ?: "Gamer Pro"
 
-    // --- 4. PRODUCTOS (CATÁLOGO COMPLETO) ---
     private val _productos = MutableStateFlow<List<Producto>>(emptyList())
     val productos: StateFlow<List<Producto>> = _productos.asStateFlow()
 
@@ -120,13 +111,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    // --- 5. PRODUCTO SELECCIONADO ---
     private val _productoSeleccionado = MutableStateFlow<Producto?>(null)
     val productoSeleccionado: StateFlow<Producto?> = _productoSeleccionado.asStateFlow()
 
     fun seleccionarProducto(producto: Producto) { _productoSeleccionado.value = producto }
 
-    // --- 6. CARRITO CON PERSISTENCIA ---
     private val _carrito = MutableStateFlow<List<CartItem>>(emptyList())
     val carrito: StateFlow<List<CartItem>> = _carrito.asStateFlow()
 
@@ -182,7 +171,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _carrito.value = items
     }
 
-    // --- 7. IMAGEN DE PERFIL ---
     private val _profileImageUri = MutableStateFlow<Uri?>(null)
     val profileImageUri: StateFlow<Uri?> = _profileImageUri.asStateFlow()
 

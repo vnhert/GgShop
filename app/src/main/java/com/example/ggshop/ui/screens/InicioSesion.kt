@@ -4,7 +4,6 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -24,11 +23,13 @@ import androidx.compose.ui.unit.sp
 import com.example.ggshop.navigation.Screen
 import com.example.ggshop.viewmodel.MainViewModel
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.animation.core.animateFloatAsState// Para animar la escala del botón
+import androidx.compose.animation.core.animateFloatAsState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-// Colores consistentes
 private val TechYellow = Color(0xFFFFD700)
 private val TechBlack = Color(0xFF000000)
+private val TechGreen = Color(0xFF00C853)
 
 @Composable
 fun InicioSesion(viewModel: MainViewModel) {
@@ -36,9 +37,12 @@ fun InicioSesion(viewModel: MainViewModel) {
     val password by viewModel.password.collectAsState()
     val isLoginValid by viewModel.isLoginValid.collectAsState()
 
-    var loginError by remember { mutableStateOf(false) }
+    // Obtenemos el scope para poder usar 'delay'
+    val coroutineScope = rememberCoroutineScope()
 
-    // Para la animación de "presionar" el botón
+    var loginError by remember { mutableStateOf(false) }
+    var showAdminSuccess by remember { mutableStateOf(false) }
+
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale = animateFloatAsState(if (isPressed) 0.95f else 1f, label = "buttonScale")
@@ -57,6 +61,26 @@ fun InicioSesion(viewModel: MainViewModel) {
                 tint = TechBlack,
                 modifier = Modifier.size(28.dp)
             )
+        }
+
+        AnimatedVisibility(
+            visible = showAdminSuccess,
+            enter = slideInVertically() + fadeIn(),
+            exit = slideOutVertically() + fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 40.dp)
+        ) {
+            Surface(
+                color = TechGreen,
+                shape = RoundedCornerShape(24.dp),
+                shadowElevation = 4.dp
+            ) {
+                Text(
+                    text = "¡Modo Admin Activado!",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                )
+            }
         }
 
         Column(
@@ -82,7 +106,7 @@ fun InicioSesion(viewModel: MainViewModel) {
                     viewModel.onEmailChange(it)
                     loginError = false
                 },
-                label = { Text("Email (debe incluir @)") },
+                label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
@@ -97,46 +121,46 @@ fun InicioSesion(viewModel: MainViewModel) {
                     viewModel.onPasswordChange(it)
                     loginError = false
                 },
-                label = { Text("Contraseña (mín. 6 caracteres)") },
+                label = { Text("Contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                isError = (password.isNotEmpty() && password.length < 6) || loginError,
-                supportingText = {
-                    if (password.isNotEmpty() && password.length < 6) {
-                        Text("Faltan ${6 - password.length} caracteres", color = Color.Red)
-                    }
-                }
+                isError = (password.isNotEmpty() && password.length < 6) || loginError
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- ANIMACIÓN MÁS VISUAL PARA EL MENSAJE DE ERROR (EFECTO REBOTE) ---
             AnimatedVisibility(
                 visible = loginError,
-                // Animación de entrada con rebote
                 enter = scaleIn(animationSpec = spring(dampingRatio = 0.5f, stiffness = 300f)) + fadeIn(animationSpec = tween(300)),
-                // Animación de salida (más suave)
                 exit = scaleOut(animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
             ) {
                 Text(
-                    text = "❌ Credenciales no coinciden ❌",
+                    text = "❌ Credenciales incorrectas ❌",
                     color = Color.Red,
                     modifier = Modifier.padding(bottom = 8.dp),
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
-                    fontSize = 16.sp // Más grande para mayor visibilidad
+                    fontSize = 16.sp
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // BOTÓN INGRESAR con ANIMACIÓN DE ESCALA
             Button(
                 onClick = {
                     if (viewModel.validarCredencialesPersistidas()) {
-                        viewModel.navigateTo(Screen.MainScreen)
+                        if (viewModel.esAdmin.value) {
+                            showAdminSuccess = true
+                            // AQUI ESTÁ EL CAMBIO: Espera de 1500 milisegundos (1.5 segundos)
+                            coroutineScope.launch {
+                                delay(1500)
+                                viewModel.navigateTo(Screen.MainScreen)
+                            }
+                        } else {
+                            viewModel.navigateTo(Screen.MainScreen)
+                        }
                     } else {
                         loginError = true
                     }
@@ -145,7 +169,6 @@ fun InicioSesion(viewModel: MainViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(55.dp)
-                    // Aplica la escala animada aquí
                     .graphicsLayer {
                         scaleX = scale.value
                         scaleY = scale.value
@@ -157,7 +180,7 @@ fun InicioSesion(viewModel: MainViewModel) {
                     disabledContainerColor = Color.LightGray,
                     disabledContentColor = Color.White
                 ),
-                interactionSource = interactionSource // Para detectar si se presiona
+                interactionSource = interactionSource
             ) {
                 Text(text = "Ingresar", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
