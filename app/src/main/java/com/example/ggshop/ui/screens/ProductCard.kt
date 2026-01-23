@@ -3,6 +3,7 @@ package com.example.ggshop.ui.screens
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -30,12 +32,12 @@ fun ProductoCard(producto: Producto, viewModel: MainViewModel) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    // CAMBIO IMPORTANTE: Usamos 'spring' para que rebote
+    // Animación de rebote al pulsar
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.90f else 1f, // Se achica más (al 90%)
+        targetValue = if (isPressed) 0.90f else 1f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy, // Cuánto rebota
-            stiffness = Spring.StiffnessLow // Velocidad (Low se nota más)
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
         ),
         label = "scaleAnimation"
     )
@@ -52,9 +54,6 @@ fun ProductoCard(producto: Producto, viewModel: MainViewModel) {
                 interactionSource = interactionSource,
                 indication = null
             ) {
-                // Pequeño truco opcional: Si quisieras retrasar la navegación
-                // para ver la animación, podrías usar un coroutine scope,
-                // pero con el 'spring' debería bastar.
                 viewModel.seleccionarProducto(producto)
                 viewModel.navigateTo(Screen.ProductDetail)
             },
@@ -71,14 +70,29 @@ fun ProductoCard(producto: Producto, viewModel: MainViewModel) {
                     .height(140.dp)
                     .background(Color.White)
             ) {
-                AsyncImage(
-                    model = producto.imagenUrl,
-                    contentDescription = producto.nombre,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp),
-                    contentScale = ContentScale.Fit
-                )
+                // --- CAMBIO AQUI: Lógica para mostrar imagen de Galería o Recurso ---
+                if (producto.imageUri != null) {
+                    // 1. Si el admin subió una foto (URI), usamos Coil
+                    AsyncImage(
+                        model = producto.imageUri,
+                        contentDescription = producto.nombre,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                } else {
+                    // 2. Si no hay foto nueva, usamos el recurso local (R.drawable...)
+                    Image(
+                        painter = painterResource(id = producto.imagenUrl),
+                        contentDescription = producto.nombre,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+                // -------------------------------------------------------------------
             }
 
             Column(modifier = Modifier.padding(12.dp)) {

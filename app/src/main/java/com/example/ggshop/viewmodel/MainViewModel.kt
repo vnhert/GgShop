@@ -13,10 +13,9 @@ import com.example.ggshop.navigation.Screen
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-data class CartItem(
-    val producto: Producto,
-    val cantidad: Int
-)
+data class CartItem(val producto: Producto, val cantidad: Int)
+data class Cliente(val nombre: String, val email: String)
+data class Venta(val clienteEmail: String, val items: List<CartItem>, val total: Int)
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -26,37 +25,97 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _navigationEvents = MutableSharedFlow<NavigationEvent>()
     val navigationEvents: SharedFlow<NavigationEvent> = _navigationEvents.asSharedFlow()
 
-    fun navigateTo(screen: Screen) {
-        viewModelScope.launch { _navigationEvents.emit(NavigationEvent.NavigateTo(route = screen)) }
-    }
+    fun navigateTo(screen: Screen) { viewModelScope.launch { _navigationEvents.emit(NavigationEvent.NavigateTo(screen)) } }
+    fun navigateBack() { viewModelScope.launch { _navigationEvents.emit(NavigationEvent.PopBackStack) } }
+    fun navigateUp() { viewModelScope.launch { _navigationEvents.emit(NavigationEvent.NavigateUp) } }
 
-    fun navigateBack() {
-        viewModelScope.launch { _navigationEvents.emit(NavigationEvent.PopBackStack) }
-    }
+    // --- SESIÓN ---
+    private val _usuarioLogueadoNombre = MutableStateFlow("Invitado")
+    val usuarioLogueadoNombre: StateFlow<String> = _usuarioLogueadoNombre.asStateFlow()
 
-    fun navigateUp() {
-        viewModelScope.launch { _navigationEvents.emit(NavigationEvent.NavigateUp) }
-    }
+    private val _usuarioLogueadoEmail = MutableStateFlow("invitado@ggshop.com")
+    val usuarioLogueadoEmail: StateFlow<String> = _usuarioLogueadoEmail.asStateFlow()
 
     private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email.asStateFlow()
-
     private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password.asStateFlow()
 
     val isLoginValid: StateFlow<Boolean> = combine(_email, _password) { email, pass ->
-        email.contains("@") && email.isNotBlank() && pass.length >= 6
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = false
-    )
+        email.contains("@") && pass.length >= 6
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    fun onEmailChange(nuevoEmail: String) { _email.value = nuevoEmail }
-    fun onPasswordChange(nuevaPass: String) { _password.value = nuevaPass }
+    fun onEmailChange(v: String) { _email.value = v }
+    fun onPasswordChange(v: String) { _password.value = v }
 
     private val _esAdmin = MutableStateFlow(false)
     val esAdmin: StateFlow<Boolean> = _esAdmin.asStateFlow()
+
+    // --- LISTAS ADMIN ---
+    private val _listaClientes = MutableStateFlow<List<Cliente>>(emptyList())
+    val listaClientes: StateFlow<List<Cliente>> = _listaClientes.asStateFlow()
+
+    private val _historialVentas = MutableStateFlow<List<Venta>>(emptyList())
+    val historialVentas: StateFlow<List<Venta>> = _historialVentas.asStateFlow()
+
+    // --- GESTIÓN DE PRODUCTOS (CRUD) ---
+    private val _productos = MutableStateFlow<List<Producto>>(emptyList())
+    val productos: StateFlow<List<Producto>> = _productos.asStateFlow()
+
+    fun cargarProductos() {
+        // Solo cargamos si la lista está vacía para no sobrescribir cambios
+        if (_productos.value.isEmpty()) {
+            _productos.value = listOf(
+                Producto(1L, "Logitech G502 Hero", "Sensor HERO 25K", 49990, 15, R.drawable.mousee, "GAMING"),
+                Producto(2L, "Teclado Redragon", "Mecánico TKL", 32990, 8, R.drawable.teclado, "GAMING"),
+                Producto(5L, "Audífonos HyperX", "Surround 7.1", 85990, 10, R.drawable.audi, "GAMING"),
+                Producto(6L, "Monitor ASUS TUF", "165Hz, 1ms", 249990, 4, R.drawable.moni, "GAMING"),
+                Producto(7L, "Mousepad SteelSeries", "Tela micro-tejida", 15990, 20, R.drawable.mousepad, "GAMING"),
+                Producto(8L, "Silla Gamer Corsair", "Ergonómica", 299990, 2, R.drawable.silla, "GAMING"),
+                Producto(3L, "iPhone 15 128GB", "Chip A16", 799990, 5, R.drawable.iphone, "CELULARES"),
+                Producto(4L, "Galaxy S24 Ultra", "QHD+ y S-Pen", 1199990, 3, R.drawable.samsung, "CELULARES"),
+                Producto(10L, "Pixel 8 Pro", "IA Google", 899990, 4, R.drawable.google, "CELULARES"),
+                Producto(11L, "Moto Edge 40", "Pantalla curva", 279990, 7, R.drawable.motorola, "CELULARES"),
+                Producto(12L, "Nothing Phone (2)", "Glyph Interface", 549990, 6, R.drawable.nothing, "CELULARES"),
+                Producto(13L, "Xiaomi 13T Pro", "Lente Leica", 599990, 9, R.drawable.xiaomi, "CELULARES")
+            )
+        }
+    }
+
+    // *** FUNCIÓN ACTUALIZADA: Recibe imageUri opcional ***
+    fun agregarProducto(nombre: String, precio: Int, stock: Int, categoria: String, imageUri: String?) {
+        val nuevoId = (_productos.value.mapNotNull { it.id }.maxOrNull() ?: 0L) + 1L
+
+        val nuevoProducto = Producto(
+            id = nuevoId,
+            nombre = nombre,
+            descripcion = "Nuevo ingreso",
+            precio = precio,
+            stock = stock,
+            imagenUrl = R.drawable.logo, // Imagen por defecto si falla la carga
+            categoria = categoria,
+            imageUri = imageUri // Aquí guardamos la imagen seleccionada por el admin
+        )
+
+        _productos.value = _productos.value + nuevoProducto
+    }
+
+    // 2. Editar Producto Existente
+    fun editarProducto(productoEditado: Producto) {
+        _productos.value = _productos.value.map {
+            if (it.id == productoEditado.id) productoEditado else it
+        }
+    }
+
+    // 3. Eliminar Producto
+    fun eliminarProducto(id: Long) {
+        _productos.value = _productos.value.filterNot { it.id == id }
+    }
+
+    // --- RESTO DE FUNCIONES ---
+    fun obtenerNombreUsuario(): String {
+        return _usuarioLogueadoNombre.value
+    }
 
     fun registrarUsuario(nombre: String, correo: String, pass: String, direccion: String) {
         prefs.edit().apply {
@@ -66,54 +125,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             putString("USER_DIR", direccion)
             apply()
         }
+        val nuevoCliente = Cliente(nombre, correo)
+        if (_listaClientes.value.none { it.email == correo }) {
+            _listaClientes.value = _listaClientes.value + nuevoCliente
+        }
     }
 
     fun validarCredencialesPersistidas(): Boolean {
-        val emailIngresado = _email.value
-        val passIngresada = _password.value
+        val emailInput = _email.value
+        val passInput = _password.value
 
-        if (emailIngresado == "admin@ggshop.com" && passIngresada == "admin123") {
+        if (emailInput == "admin@ggshop.com" && passInput == "admin123") {
             _esAdmin.value = true
+            _usuarioLogueadoNombre.value = "Administrador Principal"
+            _usuarioLogueadoEmail.value = "admin@ggshop.com"
             return true
         }
 
-        val correoGuardado = prefs.getString("USER_EMAIL", "") ?: ""
-        val passGuardada = prefs.getString("USER_PASS", "") ?: ""
+        val savedEmail = prefs.getString("USER_EMAIL", "") ?: ""
+        val savedPass = prefs.getString("USER_PASS", "") ?: ""
+        val savedName = prefs.getString("USER_NAME", "Usuario") ?: "Usuario"
 
-        val loginExitoso = (emailIngresado == correoGuardado && passIngresada == passGuardada)
-
-        if (loginExitoso) {
+        if (emailInput == savedEmail && passInput == savedPass) {
             _esAdmin.value = false
+            _usuarioLogueadoNombre.value = savedName
+            _usuarioLogueadoEmail.value = savedEmail
+            return true
         }
-
-        return loginExitoso
+        return false
     }
 
-    fun obtenerNombreUsuario(): String = prefs.getString("USER_NAME", "Gamer Pro") ?: "Gamer Pro"
-
-    private val _productos = MutableStateFlow<List<Producto>>(emptyList())
-    val productos: StateFlow<List<Producto>> = _productos.asStateFlow()
-
-    fun cargarProductos() {
-        _productos.value = listOf(
-            Producto(1L, "Logitech G502 Hero", "Sensor HERO 25K, 11 botones.", 49990, 15, R.drawable.mousee, "GAMING"),
-            Producto(2L, "Teclado Redragon Kumara", "Mecánico TKL, switches Blue.", 32990, 8, R.drawable.teclado, "GAMING"),
-            Producto(5L, "Audífonos HyperX Cloud II", "Surround 7.1, Memory Foam.", 85990, 10, R.drawable.audi, "GAMING"),
-            Producto(6L, "Monitor ASUS TUF 27\"", "165Hz, 1ms, Panel IPS.", 249990, 4, R.drawable.moni, "GAMING"),
-            Producto(7L, "Mousepad SteelSeries QcK", "Tela micro-tejida.", 15990, 20, R.drawable.mousepad, "GAMING"),
-            Producto(8L, "Silla Gamer Corsair T3", "Ergonómica, cuero.", 299990, 2, R.drawable.silla, "GAMING"),
-            Producto(3L, "Apple iPhone 15 128GB", "Chip A16 Bionic, 48 MP.", 799990, 5, R.drawable.iphone, "CELULARES"),
-            Producto(4L, "Samsung Galaxy S24 Ultra", "Pantalla QHD+ y S-Pen.", 1199990, 3, R.drawable.samsung, "CELULARES"),
-            Producto(10L, "Google Pixel 8 Pro", "IA de Google, cámara nocturna.", 899990, 4, R.drawable.google, "CELULARES"),
-            Producto(11L, "Motorola Edge 40 Neo", "Pantalla curva 144Hz.", 279990, 7, R.drawable.motorola, "CELULARES"),
-            Producto(12L, "Nothing Phone (2)", "Interfaz Glyph transparente.", 549990, 6, R.drawable.nothing, "CELULARES"),
-            Producto(13L, "Xiaomi 13T Pro", "Lente Leica, carga 120W.", 599990, 9, R.drawable.xiaomi, "CELULARES")
-        )
+    fun cerrarSesion() {
+        _email.value = ""
+        _password.value = ""
+        _usuarioLogueadoNombre.value = "Invitado"
+        _usuarioLogueadoEmail.value = ""
+        navigateTo(Screen.Login)
     }
 
     private val _productoSeleccionado = MutableStateFlow<Producto?>(null)
     val productoSeleccionado: StateFlow<Producto?> = _productoSeleccionado.asStateFlow()
-
     fun seleccionarProducto(producto: Producto) { _productoSeleccionado.value = producto }
 
     private val _carrito = MutableStateFlow<List<CartItem>>(emptyList())
@@ -150,6 +201,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         actualizarYGuardarCarrito(actual)
     }
 
+    fun finalizarCompra() {
+        val itemsActuales = _carrito.value
+        if (itemsActuales.isNotEmpty()) {
+            val total = itemsActuales.sumOf { it.producto.precio * it.cantidad }
+            val usuarioActual = _usuarioLogueadoEmail.value
+            val nuevaVenta = Venta(usuarioActual, itemsActuales, total)
+            _historialVentas.value = _historialVentas.value + nuevaVenta
+            actualizarYGuardarCarrito(emptyList())
+        }
+    }
+
     private fun actualizarYGuardarCarrito(nuevaLista: List<CartItem>) {
         _carrito.value = nuevaLista
         val data = nuevaLista.joinToString(separator = ";") { "${it.producto.id},${it.cantidad}" }
@@ -173,8 +235,5 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _profileImageUri = MutableStateFlow<Uri?>(null)
     val profileImageUri: StateFlow<Uri?> = _profileImageUri.asStateFlow()
-
-    fun updateProfileImage(uri: Uri?) {
-        _profileImageUri.value = uri
-    }
+    fun updateProfileImage(uri: Uri?) { _profileImageUri.value = uri }
 }

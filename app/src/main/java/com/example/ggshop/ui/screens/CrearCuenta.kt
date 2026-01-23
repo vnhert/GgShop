@@ -25,7 +25,6 @@ import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 
-// Definimos colores locales para seguir el ejemplo de Rosa Pastel (FondoGrisClaro y TechYellow)
 private val FondoGrisTech = Color(0xFFF2F2F2)
 private val TechYellow = Color(0xFFFFD700)
 private val TechBlack = Color(0xFF000000)
@@ -37,200 +36,54 @@ fun CrearCuenta(viewModel: MainViewModel) {
     var direccion by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
     var repetirContrasena by remember { mutableStateOf("") }
-
-    // Estado para el mensaje de error
     var mensajeError by remember { mutableStateOf<String?>(null) }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
-
-        // --- CONTENIDO ORIGINAL RESTAURADO ---
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 32.dp),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(70.dp))
-
-            // Logo de GgShop
-            Image(
-                painter = painterResource(id = R.drawable.logo),
-                contentDescription = "Logo GgShop",
-                modifier = Modifier.size(100.dp),
-                contentScale = ContentScale.Fit
-            )
-
+            Image(painter = painterResource(id = R.drawable.logo), contentDescription = "Logo GgShop", modifier = Modifier.size(100.dp), contentScale = ContentScale.Fit)
             Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Crear Cuenta",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = TechBlack
-            )
-
+            Text(text = "Crear Cuenta", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = TechBlack)
             Spacer(modifier = Modifier.height(32.dp))
 
-            // MOSTRAR ERROR SI EXISTE
             mensajeError?.let {
-                Text(
-                    text = it,
-                    color = Color.Red,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+                Text(text = it, color = Color.Red, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
             }
 
-            // --- FORMULARIO COMPLETO (RESTAURADO) ---
-
-            // Nombre
-            Text(
-                text = "Nombre",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                textAlign = TextAlign.Start
-            )
-            TextField(
-                value = nombre,
-                onValueChange = { nombre = it; mensajeError = null },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Ingresa tu nombre", style = MaterialTheme.typography.bodyMedium) },
-                singleLine = true,
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = FondoGrisTech,
-                    unfocusedContainerColor = FondoGrisTech,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
+            Text("Nombre", style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp))
+            TextField(value = nombre, onValueChange = { nombre = it; mensajeError = null }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Ingresa tu nombre") }, singleLine = true, colors = TextFieldDefaults.colors(focusedContainerColor = FondoGrisTech, unfocusedContainerColor = FondoGrisTech, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent), shape = RoundedCornerShape(12.dp))
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Correo
-            Text(
-                text = "Correo electrónico",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                textAlign = TextAlign.Start
-            )
-            TextField(
-                value = correo,
-                onValueChange = { correo = it; mensajeError = null },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Ingresa tu correo electrónico", style = MaterialTheme.typography.bodyMedium) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = FondoGrisTech,
-                    unfocusedContainerColor = FondoGrisTech,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
+            Text("Correo electrónico", style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp))
+            TextField(value = correo, onValueChange = { correo = it; mensajeError = null }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Ingresa tu correo") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), colors = TextFieldDefaults.colors(focusedContainerColor = FondoGrisTech, unfocusedContainerColor = FondoGrisTech, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent), shape = RoundedCornerShape(12.dp))
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Dirección
-            Text(
-                text = "Dirección",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                textAlign = TextAlign.Start
-            )
-            TextField(
-                value = direccion,
-                onValueChange = { direccion = it; mensajeError = null },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Ingresa tu dirección", style = MaterialTheme.typography.bodyMedium) },
-                singleLine = true,
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = FondoGrisTech,
-                    unfocusedContainerColor = FondoGrisTech,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
+            Text("Dirección", style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp))
+            TextField(value = direccion, onValueChange = { direccion = it; mensajeError = null }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Ingresa tu dirección") }, singleLine = true, colors = TextFieldDefaults.colors(focusedContainerColor = FondoGrisTech, unfocusedContainerColor = FondoGrisTech, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent), shape = RoundedCornerShape(12.dp))
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Password
-            Text(
-                text = "Contraseña",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                textAlign = TextAlign.Start
-            )
-            TextField(
-                value = contrasena,
-                onValueChange = { contrasena = it; mensajeError = null },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Ingresa tu contraseña", style = MaterialTheme.typography.bodyMedium) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                visualTransformation = PasswordVisualTransformation(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = FondoGrisTech,
-                    unfocusedContainerColor = FondoGrisTech,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
+            Text("Contraseña", style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp))
+            TextField(value = contrasena, onValueChange = { contrasena = it; mensajeError = null }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Ingresa tu contraseña") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), visualTransformation = PasswordVisualTransformation(), colors = TextFieldDefaults.colors(focusedContainerColor = FondoGrisTech, unfocusedContainerColor = FondoGrisTech, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent), shape = RoundedCornerShape(12.dp))
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Repetir Password
-            Text(
-                text = "Repetir contraseña",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                textAlign = TextAlign.Start
-            )
-            TextField(
-                value = repetirContrasena,
-                onValueChange = { repetirContrasena = it; mensajeError = null },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Repite tu contraseña", style = MaterialTheme.typography.bodyMedium) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                visualTransformation = PasswordVisualTransformation(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = FondoGrisTech,
-                    unfocusedContainerColor = FondoGrisTech,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
-                shape = RoundedCornerShape(12.dp)
-            )
+            Text("Repetir contraseña", style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp))
+            TextField(value = repetirContrasena, onValueChange = { repetirContrasena = it; mensajeError = null }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Repite tu contraseña") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), visualTransformation = PasswordVisualTransformation(), colors = TextFieldDefaults.colors(focusedContainerColor = FondoGrisTech, unfocusedContainerColor = FondoGrisTech, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent), shape = RoundedCornerShape(12.dp))
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Botón con Lógica Original y Persistencia
             Button(
                 onClick = {
                     val emailValido = android.util.Patterns.EMAIL_ADDRESS.matcher(correo).matches()
-
                     when {
-                        nombre.isBlank() || correo.isBlank() || direccion.isBlank() || contrasena.isBlank() -> {
-                            mensajeError = "Por favor, completa todos los campos."
-                        }
-                        !emailValido -> {
-                            mensajeError = "El formato del correo no es válido (ejemplo@gmail.com)."
-                        }
-                        contrasena.length < 6 -> {
-                            mensajeError = "La contraseña debe tener al menos 6 caracteres."
-                        }
-                        contrasena != repetirContrasena -> {
-                            mensajeError = "Las contraseñas no coinciden."
-                        }
+                        nombre.isBlank() || correo.isBlank() || direccion.isBlank() || contrasena.isBlank() -> mensajeError = "Por favor, completa todos los campos."
+                        !emailValido -> mensajeError = "El formato del correo no es válido."
+                        contrasena.length < 6 -> mensajeError = "Mínimo 6 caracteres."
+                        contrasena != repetirContrasena -> mensajeError = "Las contraseñas no coinciden."
                         else -> {
-                            mensajeError = null
-                            // Importante: Guardamos los datos antes de ir al login
+                            // Guarda en la nueva lista del ViewModel
                             viewModel.registrarUsuario(nombre, correo, contrasena, direccion)
                             viewModel.navigateTo(Screen.Login)
                         }
@@ -240,37 +93,13 @@ fun CrearCuenta(viewModel: MainViewModel) {
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = TechBlack, contentColor = TechYellow)
             ) {
-                Text(
-                    text = "Crear Cuenta",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("Crear Cuenta", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
-
             Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "© 2026 GgShop Technology. Todos los derechos reservados.",
-                style = MaterialTheme.typography.labelSmall,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(vertical = 24.dp),
-                color = Color.Gray
-            )
         }
 
-        // --- BOTÓN PARA RETROCEDER (Encima de todo) ---
-        IconButton(
-            onClick = { viewModel.navigateBack() },
-            modifier = Modifier
-                .padding(top = 40.dp, start = 16.dp)
-                .align(Alignment.TopStart)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Volver",
-                tint = TechBlack,
-                modifier = Modifier.size(28.dp)
-            )
+        IconButton(onClick = { viewModel.navigateBack() }, modifier = Modifier.padding(top = 40.dp, start = 16.dp).align(Alignment.TopStart)) {
+            Icon(Icons.Default.ArrowBack, "Volver", tint = TechBlack, modifier = Modifier.size(28.dp))
         }
     }
 }
