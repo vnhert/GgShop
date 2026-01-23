@@ -1,7 +1,9 @@
 package com.example.ggshop.ui.screens
 
-
-import androidx.compose.foundation.Image
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,24 +21,32 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.ggshop.R
+import coil.compose.AsyncImage
 import com.example.ggshop.navigation.Screen
 import com.example.ggshop.ui.theme.TechBlack
 import com.example.ggshop.ui.theme.TechYellow
-import com.example.ggshop.ui.theme.GgShopTheme
 import com.example.ggshop.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
+    // 1. DATOS DEL VIEWMODEL
+    val nombreUsuario by viewModel.usuarioLogueadoNombre.collectAsState()
+    val emailUsuario by viewModel.usuarioLogueadoEmail.collectAsState()
+    val profileImageUri by viewModel.profileImageUri.collectAsState()
+
     var itemNavSeleccionado by remember { mutableStateOf("Profile") }
+
+    // 2. LANZADOR DE GALERÍA
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        viewModel.updateProfileImage(uri)
+    }
 
     Scaffold(
         topBar = { TopBarPerfil(viewModel = viewModel) },
@@ -57,51 +67,69 @@ fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
-            // SECCIÓN CABECERA USUARIO
+            // --- SECCIÓN AVATAR EDITABLE ---
             Box(
-                modifier = Modifier.size(110.dp),
-                contentAlignment = Alignment.Center
+                modifier = Modifier.size(120.dp),
+                contentAlignment = Alignment.BottomEnd
             ) {
-                // Círculo de fondo con borde
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(4.dp)
+                        .clickable { launcher.launch("image/*") }, // Click para subir foto
                     shape = CircleShape,
                     color = Color(0xFFF5F5F5),
-                    border = androidx.compose.foundation.BorderStroke(2.dp, TechYellow)
+                    border = BorderStroke(2.dp, TechYellow)
                 ) {
-                    // Intenta cargar la imagen, si falla usa un icono
+                    if (profileImageUri != null) {
+                        AsyncImage(
+                            model = profileImageUri,
+                            contentDescription = "Foto de perfil",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Avatar",
+                            modifier = Modifier.padding(20.dp),
+                            tint = Color.LightGray
+                        )
+                    }
+                }
+
+                // Icono pequeño de edición
+                Surface(
+                    shape = CircleShape,
+                    color = TechBlack,
+                    modifier = Modifier.size(32.dp).padding(2.dp)
+                ) {
                     Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Avatar",
-                        modifier = Modifier.padding(20.dp),
-                        tint = Color.LightGray
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Editar foto",
+                        tint = TechYellow,
+                        modifier = Modifier.padding(6.dp)
                     )
-                    // Descomenta si ya agregaste la imagen a drawables:
-                    /* Image(
-                        painter = painterResource(id = R.drawable.profile_pic),
-                        contentDescription = "Foto",
-                        contentScale = ContentScale.Crop
-                    )
-                    */
                 }
             }
+            // -------------------------------
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Gamer Pro",
+                text = nombreUsuario,
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
                 color = TechBlack
             )
             Text(
-                text = "gg.gamer@ggshop.com",
+                text = emailUsuario,
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // MENSAJE DE BIENVENIDA ESTILO GAMER
+            // MENSAJE DE BIENVENIDA
             Surface(
                 modifier = Modifier.padding(horizontal = 24.dp),
                 color = TechBlack,
@@ -135,21 +163,37 @@ fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ITEMS DE AJUSTES
+            // --- LISTA COMPLETA DE OPCIONES ---
             SettingsItem(
                 icon = Icons.Default.Edit,
-                text = "Editar Perfil",
-                onClick = { viewModel.navigateTo(Screen.EditProfile) }
+                text = "Editar Nombre",
+                onClick = { /* Acción para editar nombre */ }
             )
             SettingsItem(icon = Icons.Default.Settings, text = "Preferencias")
             SettingsItem(icon = Icons.Default.Notifications, text = "Alertas y drops")
+
+            // AGREGADOS NUEVAMENTE:
             SettingsItem(icon = Icons.Default.Lock, text = "Privacidad y seguridad")
             SettingsItem(icon = Icons.Default.Info, text = "Acerca de GGShop")
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // BOTÓN CERRAR SESIÓN
+            Button(
+                onClick = { viewModel.cerrarSesion() },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEBEE), contentColor = Color.Red),
+                modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Cerrar Sesión", fontWeight = FontWeight.Bold)
+            }
 
             Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
+
+// --- Componentes Auxiliares ---
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -237,4 +281,3 @@ private fun BottomNavBarPrincipal(
         )
     }
 }
-
