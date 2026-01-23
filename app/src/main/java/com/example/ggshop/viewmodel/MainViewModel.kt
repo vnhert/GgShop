@@ -121,6 +121,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // --------------------------------------------------------------------------
+    // [NUEVO] FUNCIÓN PARA ACTUALIZAR DATOS DEL USUARIO (NOMBRE, EMAIL, PASS)
+    // --------------------------------------------------------------------------
+    fun actualizarDatosUsuario(nuevoNombre: String, nuevoEmail: String, nuevaPass: String) {
+        // 1. Actualizamos los valores en la pantalla inmediatamente
+        _usuarioLogueadoNombre.value = nuevoNombre
+        _usuarioLogueadoEmail.value = nuevoEmail
+
+        // 2. Guardamos en persistencia (SharedPreferences) para que no se borre
+        prefs.edit().apply {
+            putString("USER_NAME", nuevoNombre)
+            putString("USER_EMAIL", nuevoEmail)
+
+            // Solo actualizamos la contraseña si el usuario escribió una nueva
+            if (nuevaPass.isNotBlank()) {
+                putString("USER_PASS", nuevaPass)
+            }
+            apply()
+        }
+    }
+    // --------------------------------------------------------------------------
 
     fun cargarProductos() {
         if (_productos.value.isEmpty()) {

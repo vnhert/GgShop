@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -22,6 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -34,18 +37,32 @@ import com.example.ggshop.viewmodel.MainViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
-    // 1. DATOS DEL VIEWMODEL
+    // 1. DATOS EN TIEMPO REAL
     val nombreUsuario by viewModel.usuarioLogueadoNombre.collectAsState()
     val emailUsuario by viewModel.usuarioLogueadoEmail.collectAsState()
     val profileImageUri by viewModel.profileImageUri.collectAsState()
 
     var itemNavSeleccionado by remember { mutableStateOf("Profile") }
 
-    // 2. LANZADOR DE GALERÍA
+    // --- VARIABLES PARA EL DIÁLOGO DE EDICIÓN ---
+    var mostrarDialogoEditar by remember { mutableStateOf(false) }
+    var editNombre by remember { mutableStateOf("") }
+    var editEmail by remember { mutableStateOf("") }
+    var editPass by remember { mutableStateOf("") }
+
+    // Lanzador de galería para la foto
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         viewModel.updateProfileImage(uri)
+    }
+
+    // Función para abrir el diálogo cargando los datos actuales
+    fun abrirEdicion() {
+        editNombre = nombreUsuario
+        editEmail = emailUsuario
+        editPass = "" // La contraseña empieza vacía (si la deja vacía, no se cambia)
+        mostrarDialogoEditar = true
     }
 
     Scaffold(
@@ -67,16 +84,17 @@ fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- SECCIÓN AVATAR EDITABLE ---
+            // AVATAR CON CLICK
             Box(
                 modifier = Modifier.size(120.dp),
                 contentAlignment = Alignment.BottomEnd
             ) {
+                // Círculo grande (Foto)
                 Surface(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(4.dp)
-                        .clickable { launcher.launch("image/*") }, // Click para subir foto
+                        .clickable { launcher.launch("image/*") },
                     shape = CircleShape,
                     color = Color(0xFFF5F5F5),
                     border = BorderStroke(2.dp, TechYellow)
@@ -97,25 +115,23 @@ fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
                         )
                     }
                 }
-
-                // Icono pequeño de edición
+                // Botón pequeño (Lápiz)
                 Surface(
                     shape = CircleShape,
                     color = TechBlack,
-                    modifier = Modifier.size(32.dp).padding(2.dp)
+                    modifier = Modifier
+                        .size(32.dp)
+                        .padding(2.dp)
+                        .clip(CircleShape)
+                        .clickable { launcher.launch("image/*") }
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Editar foto",
-                        tint = TechYellow,
-                        modifier = Modifier.padding(6.dp)
-                    )
+                    Icon(Icons.Default.Edit, "Editar foto", tint = TechYellow, modifier = Modifier.padding(6.dp))
                 }
             }
-            // -------------------------------
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // TEXTOS (NOMBRE Y EMAIL)
             Text(
                 text = nombreUsuario,
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
@@ -129,7 +145,7 @@ fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // MENSAJE DE BIENVENIDA
+
             Surface(
                 modifier = Modifier.padding(horizontal = 24.dp),
                 color = TechBlack,
@@ -152,7 +168,6 @@ fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // CONFIGURACIONES
             Text(
                 text = "CONFIGURACION",
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
@@ -163,16 +178,17 @@ fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- LISTA COMPLETA DE OPCIONES ---
+            //LISTA DE OPCIONES
+
+            // 1. EDITAR PERFIL (Abre el diálogo)
             SettingsItem(
                 icon = Icons.Default.Edit,
-                text = "Editar Nombre",
-                onClick = { /* Acción para editar nombre */ }
+                text = "Editar Perfil",
+                onClick = { abrirEdicion() }
             )
+
             SettingsItem(icon = Icons.Default.Settings, text = "Preferencias")
             SettingsItem(icon = Icons.Default.Notifications, text = "Alertas y drops")
-
-            // AGREGADOS NUEVAMENTE:
             SettingsItem(icon = Icons.Default.Lock, text = "Privacidad y seguridad")
             SettingsItem(icon = Icons.Default.Info, text = "Acerca de GGShop")
 
@@ -190,10 +206,65 @@ fun PerfilUsuario(viewModel: MainViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(40.dp))
         }
+
+        //  (DIALOG) PARA EDITAR DATOS
+        if (mostrarDialogoEditar) {
+            AlertDialog(
+                onDismissRequest = { mostrarDialogoEditar = false },
+                title = { Text("Editar Perfil", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = editNombre,
+                            onValueChange = { editNombre = it },
+                            label = { Text("Nombre") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = editEmail,
+                            onValueChange = { editEmail = it },
+                            label = { Text("Correo (Gmail)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                        )
+                        OutlinedTextField(
+                            value = editPass,
+                            onValueChange = { editPass = it },
+                            label = { Text("Nueva Contraseña") },
+                            placeholder = { Text("Dejar vacía para mantener") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            // LLAMADA AL VIEWMODEL PARA GUARDAR
+                            viewModel.actualizarDatosUsuario(editNombre, editEmail, editPass)
+                            mostrarDialogoEditar = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = TechBlack, contentColor = TechYellow)
+                    ) {
+                        Text("Guardar Cambios")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { mostrarDialogoEditar = false }) {
+                        Text("Cancelar")
+                    }
+                },
+                containerColor = Color.White
+            )
+        }
     }
 }
 
-// --- Componentes Auxiliares ---
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
