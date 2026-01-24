@@ -1,5 +1,6 @@
 package com.example.ggshop.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -29,9 +30,10 @@ import com.example.ggshop.ui.theme.TechBlack
 import com.example.ggshop.ui.theme.TechYellow
 import com.example.ggshop.ui.theme.TechWhite
 import com.example.ggshop.ui.theme.TechGray
-import com.example.ggshop.ui.theme.GgShopTheme
 import com.example.ggshop.viewmodel.CartItem
 import com.example.ggshop.viewmodel.MainViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 // --- TOP BAR TECH ---
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,9 +50,18 @@ fun CartTopBar(viewModel: MainViewModel) {
     )
 }
 
-// --- BARRA DE TOTAL / PAGAR ---
+// --- BARRA DE TOTAL / PAGAR (MODIFICADA CON ANIMACIÓN DEL PROFE) ---
 @Composable
 fun CartCheckoutBar(total: String, viewModel: MainViewModel) {
+
+    // 1. ESTADOS PARA LA ANIMACIÓN (Igual que el ejemplo del profe)
+    var isLoading by remember { mutableStateOf(false) }
+    var textoBoton by remember { mutableStateOf("Pagar Ahora") }
+
+    // Necesitamos el contexto para el mensaje Toast y el Scope para la corrutina
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -66,16 +77,48 @@ fun CartCheckoutBar(total: String, viewModel: MainViewModel) {
 
         Button(
             onClick = {
-                viewModel.finalizarCompra()
-                viewModel.navigateTo(Screen.MainScreen)
+                // 2. LÓGICA DE LA ANIMACIÓN AL HACER CLICK
+                isLoading = true
+                textoBoton = "Procesando..."
+
+                // Lanzamos la corrutina (hilo secundario)
+                scope.launch {
+                    delay(3000L) // Esperamos 3 segundos (Simulación)
+
+                    // Al terminar la espera:
+                    isLoading = false
+                    textoBoton = "¡Éxito!"
+
+                    // Mostramos mensaje
+                    Toast.makeText(context, "¡Pago realizado con éxito!", Toast.LENGTH_LONG).show()
+
+                    delay(500L) // Pequeña pausa para leer el botón
+
+                    // Ejecutamos la lógica real del ViewModel
+                    viewModel.finalizarCompra()
+                    viewModel.navigateTo(Screen.MainScreen)
+                }
             },
+            // Bloqueamos el botón si está cargando para que no le den click dos veces
+            enabled = !isLoading,
             modifier = Modifier.height(50.dp).weight(1f).padding(start = 16.dp),
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = TechYellow, contentColor = TechBlack)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.ShoppingCart, "Pagar", modifier = Modifier.size(20.dp).padding(end = 4.dp))
-                Text("Pagar Ahora", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold))
+                // 3. MOSTRAMOS EL CIRCULO SI ESTA CARGANDO
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp).padding(end = 8.dp),
+                        color = TechBlack,
+                        strokeWidth = 3.dp
+                    )
+                } else {
+                    // Si no está cargando, mostramos el icono del carrito normal
+                    Icon(Icons.Default.ShoppingCart, "Pagar", modifier = Modifier.size(20.dp).padding(end = 4.dp))
+                }
+
+                Text(textoBoton, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold))
             }
         }
     }
@@ -104,6 +147,7 @@ private fun BottomNavBarPrincipal(viewModel: MainViewModel, itemSeleccionado: St
 @Composable
 fun Carrito(viewModel: MainViewModel) {
     var itemNavSeleccionado by remember { mutableStateOf("Cart") }
+    // Usamos collectAsState para que la UI se actualice sola si el carrito cambia
     val carrito by viewModel.carrito.collectAsState()
 
     val total = carrito.sumOf { (it.producto.precio.toDouble()) * it.cantidad }
@@ -113,30 +157,39 @@ fun Carrito(viewModel: MainViewModel) {
         topBar = { CartTopBar(viewModel = viewModel) },
         bottomBar = {
             Column {
+                // Aquí pasamos el ViewModel a la barra modificada
                 CartCheckoutBar(total = totalTexto, viewModel = viewModel)
                 BottomNavBarPrincipal(viewModel = viewModel, itemSeleccionado = itemNavSeleccionado)
             }
         },
         containerColor = TechWhite
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.padding(innerPadding).fillMaxSize().padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(vertical = 16.dp)
-        ) {
-            items(carrito) { item ->
-                CartItemRow(
-                    item = item,
-                    onIncrement = { viewModel.actualizarCantidad(item.producto.id ?: 0L, item.cantidad + 1) },
-                    onDecrement = { if (item.cantidad > 1) viewModel.actualizarCantidad(item.producto.id ?: 0L, item.cantidad - 1) },
-                    onDelete = { viewModel.eliminarDelCarrito(item.producto.id ?: 0L) }
-                )
+
+        // Validación visual si el carrito está vacío
+        if (carrito.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                Text("Tu carrito está vacío", color = Color.Gray, fontSize = 18.sp)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.padding(innerPadding).fillMaxSize().padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(vertical = 16.dp)
+            ) {
+                items(carrito) { item ->
+                    CartItemRow(
+                        item = item,
+                        onIncrement = { viewModel.actualizarCantidad(item.producto.id ?: 0L, item.cantidad + 1) },
+                        onDecrement = { if (item.cantidad > 1) viewModel.actualizarCantidad(item.producto.id ?: 0L, item.cantidad - 1) },
+                        onDelete = { viewModel.eliminarDelCarrito(item.producto.id ?: 0L) }
+                    )
+                }
             }
         }
     }
 }
 
-// --- ITEM DE LA LISTA ---
+// --- ITEM DE LA LISTA (Igual que antes) ---
 @Composable
 fun CartItemRow(item: CartItem, onIncrement: () -> Unit, onDecrement: () -> Unit, onDelete: () -> Unit) {
     val producto = item.producto
