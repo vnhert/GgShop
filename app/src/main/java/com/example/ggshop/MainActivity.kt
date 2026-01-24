@@ -35,7 +35,6 @@ class MainActivity : ComponentActivity() {
 fun AppNavHost(viewModel: MainViewModel = viewModel()) {
     val navController = rememberNavController()
 
-
     LaunchedEffect(key1 = Unit) {
         viewModel.navigationEvents.collectLatest { event ->
             when (event) {
@@ -85,6 +84,7 @@ fun AppNavHost(viewModel: MainViewModel = viewModel()) {
             composable(route = Screen.Cart.route) {
                 Carrito(viewModel = viewModel)
             }
+            // Mantenemos este por si acaso lo usas en otro lado
             composable(route = Screen.ProductDetail.route) {
                 DetalleProducto(viewModel = viewModel)
             }
@@ -94,10 +94,14 @@ fun AppNavHost(viewModel: MainViewModel = viewModel()) {
             composable(route = Screen.Favorites.route){
                 Favoritos(viewModel = viewModel)
             }
-            composable(Screen.Inventory.route) {
+            composable(route = Screen.Inventory.route) {
                 PerfilAdministrador(viewModel = viewModel)
-        }
-    }
+            }
 
+            // --- PARA FAVORITOS ---
+            composable(route = Screen.Detail.route) {
+                DetalleProducto(viewModel = viewModel)
+            }
+        }
     }
 }

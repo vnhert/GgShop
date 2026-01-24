@@ -138,7 +138,7 @@ fun PerfilAdministrador(viewModel: MainViewModel) {
                             }
                         }
                     }
-                    1 -> { // VENTAS
+                    1 -> { // VENTAS (CORREGIDO PARA USAR itemsResumen)
                         if (ventas.isEmpty()) MensajeVacio("No hay historial de ventas.")
                         else LazyColumn {
                             items(ventas) { venta ->
@@ -149,7 +149,14 @@ fun PerfilAdministrador(viewModel: MainViewModel) {
                                             Text("$${venta.total}", color = Color(0xFF2E7D32), fontWeight = FontWeight.ExtraBold)
                                         }
                                         Divider(modifier = Modifier.padding(vertical = 8.dp))
-                                        venta.items.forEach { item -> Text("• ${item.cantidad}x ${item.producto.nombre}", fontSize = 12.sp) }
+
+                                        // AQUÍ ESTABA EL ERROR: Usamos itemsResumen en lugar de un bucle
+                                        Text(
+                                            text = venta.itemsResumen,
+                                            fontSize = 13.sp,
+                                            color = Color.DarkGray,
+                                            lineHeight = 18.sp
+                                        )
                                     }
                                 }
                             }

@@ -24,8 +24,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.ggshop.data.Producto
 import com.example.ggshop.navigation.Screen
-import com.example.ggshop.ui.theme.TechBlack // Reemplaza Cordovan
-import com.example.ggshop.ui.theme.TechYellow // Reemplaza NewYorkPink
+import com.example.ggshop.ui.theme.TechBlack
+import com.example.ggshop.ui.theme.TechYellow
 import com.example.ggshop.ui.theme.GgShopTheme
 import com.example.ggshop.viewmodel.MainViewModel
 
@@ -36,6 +36,9 @@ fun DetalleProducto(viewModel: MainViewModel = viewModel()) {
     val productoSeleccionado by viewModel.productoSeleccionado.collectAsState()
     var quantity by remember { mutableIntStateOf(1) }
 
+    // Obtenemos lista de favoritos
+    val favoritos by viewModel.favoritos.collectAsState()
+
     if (productoSeleccionado == null) {
         Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
             Text("Buscando el gadget seleccionado...", color = TechBlack)
@@ -44,6 +47,8 @@ fun DetalleProducto(viewModel: MainViewModel = viewModel()) {
     }
 
     val producto = productoSeleccionado!!
+    // Verificamos si este producto ya es favorito
+    val esFavorito = favoritos.any { it.id == producto.id }
 
     Scaffold(
         topBar = { TopBarDetalleProducto(viewModel) },
@@ -58,7 +63,12 @@ fun DetalleProducto(viewModel: MainViewModel = viewModel()) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            ProductImageAndControls(producto = producto)
+            // Pasamos estado y función lambda para toggle
+            ProductImageAndControls(
+                producto = producto,
+                esFavorito = esFavorito,
+                onToggleFavorito = { viewModel.toggleFavorito(producto) }
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -74,7 +84,6 @@ fun DetalleProducto(viewModel: MainViewModel = viewModel()) {
                 onQuantityChange = { quantity = it }
             )
 
-            // BOTÓN AÑADIR AL CARRITO ESTILO GGSHOP
             Button(
                 onClick = {
                     viewModel.agregarAlCarrito(producto, quantity)
@@ -121,7 +130,11 @@ private fun TopBarDetalleProducto(viewModel: MainViewModel) {
 }
 
 @Composable
-private fun ProductImageAndControls(producto: Producto) {
+private fun ProductImageAndControls(
+    producto: Producto,
+    esFavorito: Boolean,
+    onToggleFavorito: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -137,13 +150,15 @@ private fun ProductImageAndControls(producto: Producto) {
         )
 
         IconButton(
-            onClick = { /* Lógica Favoritos */ },
+            onClick = onToggleFavorito, // Ejecutamos la acción del VM
             modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
         ) {
             Icon(
-                imageVector = Icons.Filled.FavoriteBorder,
+                // Cambia ícono: Relleno si es favorito, Borde si no
+                imageVector = if (esFavorito) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                 contentDescription = "Favorito",
-                tint = TechBlack,
+                // Cambia color: Rojo si es favorito, Negro si no
+                tint = if (esFavorito) Color.Red else TechBlack,
                 modifier = Modifier.size(28.dp)
             )
         }

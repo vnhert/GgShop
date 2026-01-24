@@ -5,10 +5,17 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [UsuarioEntity::class], version = 1, exportSchema = false)
+// SUBIMOS VERSIÓN A 3 por VentaEntity
+@Database(
+    entities = [UsuarioEntity::class, FavoritoEntity::class, VentaEntity::class],
+    version = 3,
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun usuariosDao(): UsuariosDao
+    abstract fun favoritosDao(): FavoritosDao
+    abstract fun ventasDao(): VentasDao
 
     companion object {
         @Volatile
@@ -21,7 +28,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "ggshop_database"
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration() // Borra y crea de nuevo si cambia versión
                     .build()
                 INSTANCE = instance
                 instance
