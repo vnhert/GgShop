@@ -37,10 +37,11 @@ fun InicioSesion(viewModel: MainViewModel) {
     val password by viewModel.password.collectAsState()
     val isLoginValid by viewModel.isLoginValid.collectAsState()
 
+    // 1. CAMBIO: Ahora observamos el error directamente del ViewModel (Base de datos)
+    val loginError by viewModel.loginError.collectAsState()
+
     // Obtenemos el scope para poder usar 'delay'
     val coroutineScope = rememberCoroutineScope()
-
-    var loginError by remember { mutableStateOf(false) }
     var showAdminSuccess by remember { mutableStateOf(false) }
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -63,6 +64,7 @@ fun InicioSesion(viewModel: MainViewModel) {
             )
         }
 
+        // Animación de Admin
         AnimatedVisibility(
             visible = showAdminSuccess,
             enter = slideInVertically() + fadeIn(),
@@ -103,8 +105,8 @@ fun InicioSesion(viewModel: MainViewModel) {
             OutlinedTextField(
                 value = email,
                 onValueChange = {
+                    // El ViewModel se encarga de limpiar el error
                     viewModel.onEmailChange(it)
-                    loginError = false
                 },
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
@@ -118,8 +120,8 @@ fun InicioSesion(viewModel: MainViewModel) {
             OutlinedTextField(
                 value = password,
                 onValueChange = {
+                    // El ViewModel se encarga de limpiar el error
                     viewModel.onPasswordChange(it)
-                    loginError = false
                 },
                 label = { Text("Contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
@@ -131,6 +133,7 @@ fun InicioSesion(viewModel: MainViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Mensaje de Error (Ahora reacciona a la BD)
             AnimatedVisibility(
                 visible = loginError,
                 enter = scaleIn(animationSpec = spring(dampingRatio = 0.5f, stiffness = 300f)) + fadeIn(animationSpec = tween(300)),
@@ -150,20 +153,9 @@ fun InicioSesion(viewModel: MainViewModel) {
 
             Button(
                 onClick = {
-                    if (viewModel.validarCredencialesPersistidas()) {
-                        if (viewModel.esAdmin.value) {
-                            showAdminSuccess = true
-                            // AQUI ESTÁ EL CAMBIO: Espera de 1500 milisegundos (1.5 segundos)
-                            coroutineScope.launch {
-                                delay(1500)
-                                viewModel.navigateTo(Screen.MainScreen)
-                            }
-                        } else {
-                            viewModel.navigateTo(Screen.MainScreen)
-                        }
-                    } else {
-                        loginError = true
-                    }
+                    // 2. CAMBIO: Llamamos a validarLogin() que consulta la BD (Room)
+                    // La navegación la maneja el ViewModel automáticamente si es exitoso.
+                    viewModel.validarLogin()
                 },
                 enabled = isLoginValid,
                 modifier = Modifier

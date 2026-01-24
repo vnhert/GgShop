@@ -76,8 +76,11 @@ fun PantallaPrincipal(viewModel: MainViewModel = viewModel()) {
                 .verticalScroll(rememberScrollState())
         ) {
             PromoBanner()
+
+            // --- SECCIÓN DE PESTAÑAS (GAMING / CELULARES) ---
             TabsTech(tabSeleccionada = tabSeleccionada, onTabSelected = { tabSeleccionada = it })
 
+            // --- LISTA DE PRODUCTOS ---
             ContenidoTech(
                 viewModel = viewModel,
                 productos = productos,
@@ -87,6 +90,8 @@ fun PantallaPrincipal(viewModel: MainViewModel = viewModel()) {
         }
     }
 }
+
+// (El banner GamerZoneBanner ha sido eliminado de este archivo porque ahora vive en PerfilUsuario.kt)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -181,7 +186,6 @@ private fun TopBarPrincipal(
                         Icon(
                             imageVector = Icons.Default.EditNote,
                             contentDescription = "Panel Admin",
-                            // CAMBIO: Usamos TechYellow para combinar con la marca
                             tint = TechYellow
                         )
                     }
@@ -266,7 +270,7 @@ private fun ContenidoTech(
                                         ),
                                 modifier = Modifier.weight(1f).padding(4.dp)
                             ) {
-                                // Aquí se llama a tu componente de tarjeta de producto
+                                // Llamamos al componente de la tarjeta
                                 ProductoCard(producto = producto, viewModel = viewModel)
                             }
                         }
@@ -330,6 +334,12 @@ private fun BottomNavBarPrincipal(viewModel: MainViewModel, itemSeleccionado: St
             onClick = { onItemSeleccionado("Profile"); viewModel.navigateTo(Screen.Profile) },
             icon = { Icon(Icons.Outlined.Person, null) },
             label = { Text("Perfil") }
+        )
+        NavigationBarItem(
+            selected = itemSeleccionado == "Favorites",
+            onClick = { onItemSeleccionado("Favorites"); viewModel.navigateTo(Screen.Favorites) },
+            icon = { Icon(Icons.Default.FavoriteBorder, null) },
+            label = { Text("Favoritos") }
         )
     }
 }

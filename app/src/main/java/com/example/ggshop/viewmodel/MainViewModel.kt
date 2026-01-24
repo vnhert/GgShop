@@ -11,7 +11,7 @@ import com.example.ggshop.data.Producto
 import com.example.ggshop.data.room.AppDatabase
 import com.example.ggshop.data.room.FavoritoEntity
 import com.example.ggshop.data.room.UsuarioEntity
-import com.example.ggshop.data.room.VentaEntity // Importamos la nueva entidad
+import com.example.ggshop.data.room.VentaEntity
 import com.example.ggshop.navigation.NavigationEvent
 import com.example.ggshop.navigation.Screen
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +23,6 @@ import java.io.FileOutputStream
 
 data class CartItem(val producto: Producto, val cantidad: Int)
 data class Cliente(val nombre: String, val email: String)
-// Modificamos Venta para que se adapte a lo que mostramos en la UI del Admin
 data class Venta(val clienteEmail: String, val itemsResumen: String, val total: Int)
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -31,7 +30,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getDatabase(application)
     private val dao = db.usuariosDao()
     private val favoritosDao = db.favoritosDao()
-    private val ventasDao = db.ventasDao() // 1. Inicializamos DAO Ventas
+    private val ventasDao = db.ventasDao()
 
     private val prefs: SharedPreferences =
         application.getSharedPreferences("GGShop_Prefs", Context.MODE_PRIVATE)
@@ -58,31 +57,155 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password.asStateFlow()
 
+    private val _loginError = MutableStateFlow(false)
+    val loginError: StateFlow<Boolean> = _loginError.asStateFlow()
+
+    fun onEmailChange(v: String) {
+        _email.value = v
+        _loginError.value = false
+    }
+    fun onPasswordChange(v: String) {
+        _password.value = v
+        _loginError.value = false
+    }
+
+    // --- PUNTOS ---
+    private val _puntosUsuario = MutableStateFlow(0)
+    val puntosUsuario: StateFlow<Int> = _puntosUsuario.asStateFlow()
+
     val isLoginValid: StateFlow<Boolean> = combine(_email, _password) { email, pass ->
         email.contains("@") && pass.length >= 6
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    fun onEmailChange(v: String) { _email.value = v }
-    fun onPasswordChange(v: String) { _password.value = v }
-
     private val _esAdmin = MutableStateFlow(false)
     val esAdmin: StateFlow<Boolean> = _esAdmin.asStateFlow()
 
-    // --- LISTAS ADMIN ---
     private val _listaClientes = MutableStateFlow<List<Cliente>>(emptyList())
     val listaClientes: StateFlow<List<Cliente>> = _listaClientes.asStateFlow()
 
-    // Historial de ventas (Conectado a Room)
     private val _historialVentas = MutableStateFlow<List<Venta>>(emptyList())
     val historialVentas: StateFlow<List<Venta>> = _historialVentas.asStateFlow()
 
-    // --- PRODUCTOS ---
     private val _productos = MutableStateFlow<List<Producto>>(emptyList())
     val productos: StateFlow<List<Producto>> = _productos.asStateFlow()
 
-    // --- FAVORITOS (ROOM) ---
     private val _favoritos = MutableStateFlow<List<Producto>>(emptyList())
     val favoritos: StateFlow<List<Producto>> = _favoritos.asStateFlow()
+
+    init {
+        crearUsuarioAdminPorDefecto()
+        cargarProductos()
+        cargarCarritoPersistido()
+        cargarFavoritosPersistidos()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.obtenerTodosEnTiempoReal().collect { listaEntidades ->
+                _listaClientes.value = listaEntidades.map { Cliente(it.nombre, it.email) }
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            ventasDao.obtenerHistorialVentas().collect { listaVentasDB ->
+                _historialVentas.value = listaVentasDB.map {
+                    Venta(it.usuarioEmail, it.itemsResumen, it.total)
+                }
+            }
+        }
+    }
+
+    // --- CAMBIO 1: El Admin ahora empieza con 0 puntos para que no se vea lleno ---
+    private fun crearUsuarioAdminPorDefecto() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val admin = dao.obtenerPorEmail("admin@ggshop.com")
+            if (admin == null) {
+                dao.insert(
+                    UsuarioEntity(
+                        email = "admin@ggshop.com",
+                        nombre = "Administrador Principal",
+                        password = "admin123",
+                        imageUri = null,
+                        puntos = 0 // <--- AHORA EMPIEZA EN CERO
+                    )
+                )
+            }
+        }
+    }
+
+    fun validarLogin() {
+        val emailInput = _email.value.trim()
+        val passInput = _password.value.trim()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val usuarioEncontrado = dao.login(emailInput, passInput)
+
+            withContext(Dispatchers.Main) {
+                if (usuarioEncontrado != null) {
+                    _loginError.value = false
+
+                    if (usuarioEncontrado.email == "admin@ggshop.com") {
+                        _esAdmin.value = true
+                    } else {
+                        _esAdmin.value = false
+                    }
+
+                    _usuarioLogueadoNombre.value = usuarioEncontrado.nombre
+                    _usuarioLogueadoEmail.value = usuarioEncontrado.email
+                    _profileImageUri.value = if (usuarioEncontrado.imageUri != null) Uri.parse(usuarioEncontrado.imageUri) else null
+                    _puntosUsuario.value = usuarioEncontrado.puntos
+
+                    cargarFavoritosDelUsuario()
+                    navigateTo(Screen.MainScreen)
+                } else {
+                    _loginError.value = true
+                }
+            }
+        }
+    }
+
+    fun registrarUsuario(nombre: String, correo: String, pass: String, direccion: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (dao.obtenerPorEmail(correo) == null) {
+                dao.insert(UsuarioEntity(email = correo, nombre = nombre, password = pass, imageUri = null, puntos = 0))
+            }
+        }
+    }
+
+    fun actualizarDatosUsuario(nuevoNombre: String, nuevoEmail: String, nuevaPass: String) {
+        val emailActual = _usuarioLogueadoEmail.value
+        _usuarioLogueadoNombre.value = nuevoNombre
+        if (nuevoEmail != emailActual) _usuarioLogueadoEmail.value = nuevoEmail
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val usuarioActual = dao.obtenerPorEmail(emailActual) ?: return@launch
+            val passFinal = if (nuevaPass.isNotBlank()) nuevaPass else usuarioActual.password
+            dao.actualizarUsuario(emailActual, nuevoNombre, passFinal)
+        }
+    }
+
+    fun updateProfileImage(uri: Uri?) {
+        if (uri != null) {
+            val savedUri = copiarImagenAlmacenamientoInterno(uri)
+            if (savedUri != null) {
+                _profileImageUri.value = savedUri
+                val emailActual = _usuarioLogueadoEmail.value
+                viewModelScope.launch(Dispatchers.IO) { dao.actualizarFoto(emailActual, savedUri.toString()) }
+            }
+        }
+    }
+
+    private fun copiarImagenAlmacenamientoInterno(uri: Uri): Uri? {
+        return try {
+            val context = getApplication<Application>().applicationContext
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+            val fileName = "profile_${System.currentTimeMillis()}.jpg"
+            val file = File(context.filesDir, fileName)
+            val outputStream = FileOutputStream(file)
+            inputStream.copyTo(outputStream)
+            inputStream.close()
+            outputStream.close()
+            Uri.fromFile(file)
+        } catch (e: Exception) { e.printStackTrace(); null }
+    }
 
     fun cargarFavoritosDelUsuario() {
         val email = _usuarioLogueadoEmail.value
@@ -105,104 +228,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // [ROOM] LOGIN
-    fun validarCredencialesPersistidas(): Boolean {
-        val emailInput = _email.value
-        val passInput = _password.value
+    // --- CAMBIO 2: DIFICULTAD AUMENTADA ---
+    fun canjearPuntosPorJuego(juego: String, horas: Int) {
+        val email = _usuarioLogueadoEmail.value
+        if (email == "invitado@ggshop.com") return
 
-        if (emailInput == "admin@ggshop.com" && passInput == "admin123") {
-            _esAdmin.value = true
-            _usuarioLogueadoNombre.value = "Administrador Principal"
-            _usuarioLogueadoEmail.value = "admin@ggshop.com"
-            _profileImageUri.value = null
-            cargarFavoritosDelUsuario()
-            return true
-        }
+        // ANTES: 100 puntos x hora (Muy fácil)
+        // AHORA: 25 puntos x hora (Difícil: requiere 4000 horas para el max)
+        val puntosGanados = horas * 25
 
         viewModelScope.launch(Dispatchers.IO) {
-            val usuarioEncontrado = dao.login(emailInput, passInput)
-            withContext(Dispatchers.Main) {
-                if (usuarioEncontrado != null) {
-                    _esAdmin.value = false
-                    _usuarioLogueadoNombre.value = usuarioEncontrado.nombre
-                    _usuarioLogueadoEmail.value = usuarioEncontrado.email
-                    _profileImageUri.value = if (usuarioEncontrado.imageUri != null) Uri.parse(usuarioEncontrado.imageUri) else null
-                    cargarFavoritosDelUsuario()
-                    navigateTo(Screen.MainScreen)
-                }
-            }
-        }
-        return (emailInput == "admin@ggshop.com" && passInput == "admin123")
-    }
-
-    // [ROOM] REGISTRO Y UPDATE
-    fun registrarUsuario(nombre: String, correo: String, pass: String, direccion: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            if (dao.obtenerPorEmail(correo) == null) {
-                dao.insert(UsuarioEntity(email = correo, nombre = nombre, password = pass, imageUri = null))
+            dao.sumarPuntos(email, puntosGanados)
+            val usuarioActualizado = dao.obtenerPorEmail(email)
+            if (usuarioActualizado != null) {
+                _puntosUsuario.value = usuarioActualizado.puntos
             }
         }
     }
-
-    fun actualizarDatosUsuario(nuevoNombre: String, nuevoEmail: String, nuevaPass: String) {
-        val emailActual = _usuarioLogueadoEmail.value
-        _usuarioLogueadoNombre.value = nuevoNombre
-        viewModelScope.launch(Dispatchers.IO) {
-            val usuarioActual = dao.obtenerPorEmail(emailActual) ?: return@launch
-            val passFinal = if (nuevaPass.isNotBlank()) nuevaPass else usuarioActual.password
-            dao.actualizarUsuario(emailActual, nuevoNombre, passFinal)
-        }
-    }
-
-    // [ROOM] FOTO PERFIL
-    private fun copiarImagenAlmacenamientoInterno(uri: Uri): Uri? {
-        return try {
-            val context = getApplication<Application>().applicationContext
-            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
-            val fileName = "profile_${System.currentTimeMillis()}.jpg"
-            val file = File(context.filesDir, fileName)
-            val outputStream = FileOutputStream(file)
-            inputStream.copyTo(outputStream)
-            inputStream.close()
-            outputStream.close()
-            Uri.fromFile(file)
-        } catch (e: Exception) { e.printStackTrace(); null }
-    }
-
-    fun updateProfileImage(uri: Uri?) {
-        if (uri != null) {
-            val savedUri = copiarImagenAlmacenamientoInterno(uri)
-            if (savedUri != null) {
-                _profileImageUri.value = savedUri
-                val emailActual = _usuarioLogueadoEmail.value
-                viewModelScope.launch(Dispatchers.IO) { dao.actualizarFoto(emailActual, savedUri.toString()) }
-            }
-        }
-    }
-
-    // INIT BLOQUE
-    init {
-        cargarProductos()
-        cargarCarritoPersistido()
-        cargarFavoritosPersistidos()
-
-        // 2. Escuchar Clientes en tiempo real
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.obtenerTodosEnTiempoReal().collect { listaEntidades ->
-                _listaClientes.value = listaEntidades.map { Cliente(it.nombre, it.email) }
-            }
-        }
-
-        // 3. Escuchar VENTAS en tiempo real (Para el Admin)
-        viewModelScope.launch(Dispatchers.IO) {
-            ventasDao.obtenerHistorialVentas().collect { listaVentasDB ->
-                _historialVentas.value = listaVentasDB.map {
-                    Venta(it.usuarioEmail, it.itemsResumen, it.total)
-                }
-            }
-        }
-    }
-
 
     fun cargarProductos() {
         if (_productos.value.isEmpty()) {
@@ -233,17 +275,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
     fun eliminarProducto(id: Long) { _productos.value = _productos.value.filterNot { it.id == id } }
     fun obtenerNombreUsuario(): String = _usuarioLogueadoNombre.value
+
     fun cerrarSesion() {
         _email.value = ""
         _password.value = ""
         _usuarioLogueadoNombre.value = "Invitado"
         _usuarioLogueadoEmail.value = ""
         _profileImageUri.value = null
+        _puntosUsuario.value = 0
         cargarFavoritosDelUsuario()
         navigateTo(Screen.Login)
     }
 
-    // --- CARRITO ---
     private val _productoSeleccionado = MutableStateFlow<Producto?>(null)
     val productoSeleccionado: StateFlow<Producto?> = _productoSeleccionado.asStateFlow()
     fun seleccionarProducto(producto: Producto) { _productoSeleccionado.value = producto }
@@ -274,18 +317,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         actualizarYGuardarCarrito(actual)
     }
 
-    // 4. LÓGICA DE COMPRA MODIFICADA PARA GUARDAR EN ROOM
     fun finalizarCompra() {
         val itemsActuales = _carrito.value
         if (itemsActuales.isNotEmpty()) {
             val total = itemsActuales.sumOf { it.producto.precio * it.cantidad }
             val usuarioActual = _usuarioLogueadoEmail.value
-
-            // Creamos un resumen string  "Mouse x1, Teclado x2"
             val resumen = itemsActuales.joinToString(", ") { "${it.producto.nombre} (x${it.cantidad})" }
-
             viewModelScope.launch(Dispatchers.IO) {
-                // Guardamos en la base de datos
                 ventasDao.registrarVenta(
                     VentaEntity(
                         usuarioEmail = usuarioActual,
@@ -294,7 +332,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         fecha = System.currentTimeMillis()
                     )
                 )
-                // Limpiamos carrito localmente
                 withContext(Dispatchers.Main) {
                     actualizarYGuardarCarrito(emptyList())
                 }

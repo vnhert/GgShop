@@ -102,6 +102,10 @@ fun AppNavHost(viewModel: MainViewModel = viewModel()) {
             composable(route = Screen.Detail.route) {
                 DetalleProducto(viewModel = viewModel)
             }
+            //Para juegos
+            composable(route = Screen.GamerZone.route) {
+                GamerZone(viewModel = viewModel)
+            }
         }
     }
 }

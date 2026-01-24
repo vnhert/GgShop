@@ -27,4 +27,7 @@ interface UsuariosDao {
     // Al devolver Flow, no usamos 'suspend'. Room avisara cambios.
     @Query("SELECT * FROM Usuarios")
     fun obtenerTodosEnTiempoReal(): Flow<List<UsuarioEntity>>
+
+    @Query("UPDATE usuarios SET puntos = puntos + :nuevosPuntos WHERE email = :email")
+    suspend fun sumarPuntos(email: String, nuevosPuntos: Int)
 }

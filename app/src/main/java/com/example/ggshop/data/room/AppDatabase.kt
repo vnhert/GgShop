@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
 // SUBIMOS VERSIÓN A 3 por VentaEntity
 @Database(
     entities = [UsuarioEntity::class, FavoritoEntity::class, VentaEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

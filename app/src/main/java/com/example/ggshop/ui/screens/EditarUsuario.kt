@@ -1,18 +1,21 @@
 package com.example.ggshop.ui.screens
 
-import android.content.Context
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
+import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.*
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,13 +24,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.ggshop.R
-import com.example.ggshop.navigation.Screen
 import com.example.ggshop.ui.theme.TechBlack
 import com.example.ggshop.ui.theme.TechYellow
 import com.example.ggshop.viewmodel.MainViewModel
@@ -35,175 +38,152 @@ import com.example.ggshop.viewmodel.MainViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditarUsuario(viewModel: MainViewModel) {
-    // Datos obtenidos de tu ViewModel actual
-    val nombre = viewModel.obtenerNombreUsuario()
-    val correo = "ye.gamer@ggshop.com"
-    val profileImageUri by viewModel.profileImageUri.collectAsState()
-
-    // Contexto para el recurso nativo de vibración
     val context = LocalContext.current
 
-    // RECURSO NATIVO 1: Galería (Se especifica el contrato para evitar ambigüedad)
-    val galleryLauncher = rememberLauncherForActivityResult(
+    // Datos actuales del ViewModel
+    val currentName by viewModel.usuarioLogueadoNombre.collectAsState()
+    val currentEmail by viewModel.usuarioLogueadoEmail.collectAsState()
+    val currentImage by viewModel.profileImageUri.collectAsState()
+
+    // Variables temporales para editar
+    var newName by remember { mutableStateOf(currentName) }
+    var newEmail by remember { mutableStateOf(currentEmail) }
+    var newPass by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    // Launcher para cambiar foto
+    val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
-    ) { uri ->
+    ) { uri: Uri? ->
         viewModel.updateProfileImage(uri)
     }
 
+    // Sincronizar datos si cargan un poco después
+    LaunchedEffect(currentName, currentEmail) {
+        if (newName.isBlank()) newName = currentName
+        if (newEmail.isBlank() || newEmail == "invitado@ggshop.com") newEmail = currentEmail
+    }
+
     Scaffold(
-        topBar = { TopBarEditarUsuario(viewModel) },
-        bottomBar = { BottomNavBarPrincipal(viewModel, "Profile") },
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("EDITAR PERFIL", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { viewModel.navigateBack() }) {
+                        Icon(Icons.Default.ArrowBack, null)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+            )
+        },
         containerColor = Color.White
-    ) { innerPadding ->
+    ) { padding ->
         Column(
             modifier = Modifier
+                .padding(padding)
                 .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // FOTO DE PERFIL TECH
+            // --- FOTO DE PERFIL ---
             Box(contentAlignment = Alignment.BottomEnd) {
-                if (profileImageUri != null) {
-                    AsyncImage(
-                        model = profileImageUri,
-                        contentDescription = "Foto de perfil",
-                        modifier = Modifier
-                            .size(130.dp)
-                            .clip(CircleShape)
-                            .border(3.dp, TechYellow, CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Image(
-                        painter = painterResource(id = R.drawable.profile_pic),
-                        contentDescription = "Foto por defecto",
-                        modifier = Modifier
-                            .size(130.dp)
-                            .clip(CircleShape)
-                            .border(3.dp, TechYellow, CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-
-                // BOTÓN EDITAR FOTO
-                Surface(
-                    shape = CircleShape,
-                    color = TechBlack,
+                AsyncImage(
+                    model = currentImage ?: R.drawable.profile_pic,
+                    contentDescription = null,
                     modifier = Modifier
-                        .size(36.dp)
-                        .border(2.dp, Color.White, CircleShape)
-                        .clickable { galleryLauncher.launch("image/*") } // Abre Galería
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray),
+                    contentScale = ContentScale.Crop
+                )
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(TechYellow)
+                        .clickable { launcher.launch("image/*") },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "Editar foto",
-                        tint = TechYellow,
-                        modifier = Modifier.padding(8.dp).size(16.dp)
-                    )
+                    Icon(Icons.Default.CameraAlt, null, tint = TechBlack)
                 }
             }
 
-            // ANIMACIÓN FUNCIONAL
-            AnimatedVisibility(
-                visible = true,
-                enter = fadeIn() + expandVertically()
-            ) {
-                Text(
-                    text = nombre,
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                    color = TechBlack,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-            }
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Text(
-                text = correo,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 32.dp)
+            // --- CAMPO NOMBRE ---
+            OutlinedTextField(
+                value = newName,
+                onValueChange = { newName = it },
+                label = { Text("Nombre de Usuario") },
+                // AQUÍ ESTABA EL ERROR, AHORA TIENE LOS PARÉNTESIS ()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = TechBlack,
+                    focusedLabelColor = TechBlack
+                )
             )
 
-            // CAMPOS EDITABLES (Corrigiendo Unresolved Reference)
-            EditableProfileField(label = "NOMBRE DE USUARIO", value = nombre)
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp), thickness = 1.dp, color = Color(0xFFF0F0F0))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            EditableProfileField(label = "EMAIL", value = correo)
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp), thickness = 1.dp, color = Color(0xFFF0F0F0))
+            // --- CAMPO EMAIL ---
+            OutlinedTextField(
+                value = newEmail,
+                onValueChange = { newEmail = it },
+                label = { Text("Correo Electrónico") },
+                modifier = Modifier.fillMaxWidth(), // Correcto
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = TechBlack,
+                    focusedLabelColor = TechBlack
+                )
+            )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // BOTÓN GUARDAR
+            // --- CAMPO CONTRASEÑA (NUEVO) ---
+            OutlinedTextField(
+                value = newPass,
+                onValueChange = { newPass = it },
+                label = { Text("Nueva Contraseña") },
+                placeholder = { Text("Deja vacío para mantener la actual") },
+                modifier = Modifier.fillMaxWidth(), // Correcto
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = TechBlack,
+                    focusedLabelColor = TechBlack
+                ),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(image, null)
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // --- BOTÓN GUARDAR ---
             Button(
                 onClick = {
-                    // RECURSO NATIVO 2: Vibración (IE 2.4.1)
-                    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+                    if (newName.isNotBlank() && newEmail.isNotBlank()) {
+                        viewModel.actualizarDatosUsuario(newName, newEmail, newPass)
+                        Toast.makeText(context, "Perfil actualizado", Toast.LENGTH_SHORT).show()
+                        viewModel.navigateBack()
                     } else {
-                        vibrator.vibrate(100)
+                        Toast.makeText(context, "Completa nombre y correo", Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 32.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = TechBlack, contentColor = TechYellow)
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = TechBlack),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("SAVE CHANGES", fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+                Text("GUARDAR CAMBIOS", color = TechYellow, fontWeight = FontWeight.Bold)
             }
         }
-    }
-}
-
-// FUNCIONES AUXILIARES QUE FALTABAN
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TopBarEditarUsuario(viewModel: MainViewModel) {
-    CenterAlignedTopAppBar(
-        title = { Text("MY PROFILE", fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp) },
-        navigationIcon = {
-            IconButton(onClick = { viewModel.navigateBack() }) {
-                Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Volver")
-            }
-        }
-    )
-}
-
-@Composable
-fun EditableProfileField(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 32.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(text = label, style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-            Text(text = value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-        }
-        Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = Color.LightGray)
-    }
-}
-
-@Composable
-private fun BottomNavBarPrincipal(viewModel: MainViewModel, itemSeleccionado: String) {
-    NavigationBar(containerColor = Color.White) {
-        NavigationBarItem(
-            selected = itemSeleccionado == "Home",
-            onClick = { viewModel.navigateTo(Screen.MainScreen) },
-            icon = { Icon(Icons.Default.Home, contentDescription = null) }
-        )
-        NavigationBarItem(
-            selected = itemSeleccionado == "Profile",
-            onClick = { /* Ya estamos aquí */ },
-            icon = { Icon(Icons.Default.Person, contentDescription = null) },
-            colors = NavigationBarItemDefaults.colors(indicatorColor = TechYellow)
-        )
     }
 }
