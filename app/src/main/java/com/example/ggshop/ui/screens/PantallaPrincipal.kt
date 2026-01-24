@@ -181,7 +181,8 @@ private fun TopBarPrincipal(
                         Icon(
                             imageVector = Icons.Default.EditNote,
                             contentDescription = "Panel Admin",
-                            tint = Color(0xFF2196F3)
+                            // CAMBIO: Usamos TechYellow para combinar con la marca
+                            tint = TechYellow
                         )
                     }
                 }
