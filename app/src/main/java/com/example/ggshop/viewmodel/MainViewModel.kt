@@ -8,10 +8,15 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ggshop.R
 import com.example.ggshop.data.Producto
+// [CAMBIO ROOM] Importaciones necesarias
+import com.example.ggshop.data.room.AppDatabase
+import com.example.ggshop.data.room.UsuarioEntity
 import com.example.ggshop.navigation.NavigationEvent
 import com.example.ggshop.navigation.Screen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
@@ -21,6 +26,11 @@ data class Venta(val clienteEmail: String, val items: List<CartItem>, val total:
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
+    // 1. Inicializamos la conexión a la Base de Datos
+    private val db = AppDatabase.getDatabase(application)
+    private val dao = db.usuariosDao()
+
+    // SharedPreferences solo para el Carrito (para lógica actual)
     private val prefs: SharedPreferences =
         application.getSharedPreferences("GGShop_Prefs", Context.MODE_PRIVATE)
 
@@ -38,7 +48,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _usuarioLogueadoEmail = MutableStateFlow("invitado@ggshop.com")
     val usuarioLogueadoEmail: StateFlow<String> = _usuarioLogueadoEmail.asStateFlow()
 
-    // --- FOTO DE PERFIL (STATEFLOW) ---
+    // --- FOTO DE PERFIL ---
     private val _profileImageUri = MutableStateFlow<Uri?>(null)
     val profileImageUri: StateFlow<Uri?> = _profileImageUri.asStateFlow()
 
@@ -68,26 +78,97 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _productos = MutableStateFlow<List<Producto>>(emptyList())
     val productos: StateFlow<List<Producto>> = _productos.asStateFlow()
 
-    // --------------------------------------------------------------------------
-    // [NUEVO] LÓGICA PARA PERSISTIR LA IMAGEN DE PERFIL
-    // --------------------------------------------------------------------------
 
-    // 1. Función auxiliar para copiar la imagen de la galería a los archivos de la app
+    // [ROOM] REGISTRO DE USUARIOS
+    fun registrarUsuario(nombre: String, correo: String, pass: String, direccion: String) {
+        viewModelScope.launch(Dispatchers.IO) { // Ejecutamos en segundo plano
+            // 1. Verificamos si el correo ya existe en la BD
+            val existe = dao.obtenerPorEmail(correo)
+
+            if (existe == null) {
+                // 2. Creamos la entidad
+                val nuevoUsuario = UsuarioEntity(
+                    email = correo,
+                    nombre = nombre,
+                    password = pass,
+                    imageUri = null
+                )
+                // 3. Insertamos en Room
+                dao.insert(nuevoUsuario)
+                // NOTA: Ya no necesitamos actualizar _listaClientes manualmente aquí
+                // porque el Flow del bloque init lo hará automáticamente.
+            }
+        }
+    }
+
+
+    // [ROOM] LOGIN DE USUARIOS
+    fun validarCredencialesPersistidas(): Boolean {
+        val emailInput = _email.value
+        val passInput = _password.value
+
+        // 1. Caso Admin
+        if (emailInput == "admin@ggshop.com" && passInput == "admin123") {
+            _esAdmin.value = true
+            _usuarioLogueadoNombre.value = "Administrador Principal"
+            _usuarioLogueadoEmail.value = "admin@ggshop.com"
+            _profileImageUri.value = null
+            return true
+        }
+
+        // 2. Caso Usuario Normal (Consultar a ROOM)
+        viewModelScope.launch(Dispatchers.IO) {
+            val usuarioEncontrado = dao.login(emailInput, passInput)
+
+            withContext(Dispatchers.Main) {
+                if (usuarioEncontrado != null) {
+                    // ¡Login Exitoso! Cargamos los datos de la BD a la memoria
+                    _esAdmin.value = false
+                    _usuarioLogueadoNombre.value = usuarioEncontrado.nombre
+                    _usuarioLogueadoEmail.value = usuarioEncontrado.email
+
+                    // Cargamos la foto si tiene
+                    if (usuarioEncontrado.imageUri != null) {
+                        _profileImageUri.value = Uri.parse(usuarioEncontrado.imageUri)
+                    } else {
+                        _profileImageUri.value = null
+                    }
+
+                    // Navegamos al Home
+                    navigateTo(Screen.MainScreen)
+                } else {
+                    // Aquí podrías manejar el error de login
+                }
+            }
+        }
+        return (emailInput == "admin@ggshop.com" && passInput == "admin123")
+    }
+
+    // [ROOM] ACTUALIZAR DATOS
+    fun actualizarDatosUsuario(nuevoNombre: String, nuevoEmail: String, nuevaPass: String) {
+        val emailActual = _usuarioLogueadoEmail.value
+
+        // Actualizamos la pantalla
+        _usuarioLogueadoNombre.value = nuevoNombre
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val usuarioActual = dao.obtenerPorEmail(emailActual) ?: return@launch
+            val passFinal = if (nuevaPass.isNotBlank()) nuevaPass else usuarioActual.password
+            dao.actualizarUsuario(emailActual, nuevoNombre, passFinal)
+        }
+    }
+
+    // [ROOM] FOTO DE PERFIL
     private fun copiarImagenAlmacenamientoInterno(uri: Uri): Uri? {
         return try {
             val context = getApplication<Application>().applicationContext
             val inputStream = context.contentResolver.openInputStream(uri) ?: return null
-
-            // Creamos un nombre de archivo único
             val fileName = "profile_${System.currentTimeMillis()}.jpg"
             val file = File(context.filesDir, fileName)
             val outputStream = FileOutputStream(file)
-
             inputStream.copyTo(outputStream)
             inputStream.close()
             outputStream.close()
-
-            // Retornamos la URI del archivo local guardado
             Uri.fromFile(file)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -95,52 +176,42 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // 2. Función modificada para actualizar y GUARDAR la imagen
     fun updateProfileImage(uri: Uri?) {
         if (uri != null) {
-            // Copiamos la imagen para que sea permanente
             val savedUri = copiarImagenAlmacenamientoInterno(uri)
             if (savedUri != null) {
                 _profileImageUri.value = savedUri
-
-                // Guardamos la ruta en Prefs asociada al email actual (para diferenciar usuarios)
-                val currentEmail = _usuarioLogueadoEmail.value
-                prefs.edit().putString("IMG_PERFIL_$currentEmail", savedUri.toString()).apply()
+                val emailActual = _usuarioLogueadoEmail.value
+                viewModelScope.launch(Dispatchers.IO) {
+                    dao.actualizarFoto(emailActual, savedUri.toString())
+                }
             }
         }
     }
 
-    // 3. Función auxiliar para cargar la imagen guardada
-    private fun cargarImagenGuardada(emailUsuario: String) {
-        val uriString = prefs.getString("IMG_PERFIL_$emailUsuario", null)
-        if (uriString != null) {
-            _profileImageUri.value = Uri.parse(uriString)
-        } else {
-            _profileImageUri.value = null // Si no tiene, se pone null (icono por defecto)
-        }
-    }
 
-    // --------------------------------------------------------------------------
-    // [NUEVO] FUNCIÓN PARA ACTUALIZAR DATOS DEL USUARIO (NOMBRE, EMAIL, PASS)
-    // --------------------------------------------------------------------------
-    fun actualizarDatosUsuario(nuevoNombre: String, nuevoEmail: String, nuevaPass: String) {
-        // 1. Actualizamos los valores en la pantalla inmediatamente
-        _usuarioLogueadoNombre.value = nuevoNombre
-        _usuarioLogueadoEmail.value = nuevoEmail
+    // CARGA DE DATOS Y BLOQUE INIT
 
-        // 2. Guardamos en persistencia (SharedPreferences) para que no se borre
-        prefs.edit().apply {
-            putString("USER_NAME", nuevoNombre)
-            putString("USER_EMAIL", nuevoEmail)
+    init {
+        cargarProductos()
+        cargarCarritoPersistido()
 
-            // Solo actualizamos la contraseña si el usuario escribió una nueva
-            if (nuevaPass.isNotBlank()) {
-                putString("USER_PASS", nuevaPass)
+        // [FLOW] Conexión en tiempo real con la BD
+        // recupera usuarios antiguos y nuevos automáticamente
+        viewModelScope.launch(Dispatchers.IO) {
+            // "dao.obtenerTodosEnTiempoReal() devuelve un Flow
+            // .collect se queda esperando cambios en la base de datos
+            dao.obtenerTodosEnTiempoReal().collect { listaEntidades ->
+                val listaMapeada = listaEntidades.map { entity ->
+                    Cliente(entity.nombre, entity.email)
+                }
+                // Actualizamos la lista del admin
+                _listaClientes.value = listaMapeada
             }
-            apply()
         }
     }
-    // --------------------------------------------------------------------------
+
+
 
     fun cargarProductos() {
         if (_productos.value.isEmpty()) {
@@ -163,18 +234,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun agregarProducto(nombre: String, precio: Int, stock: Int, categoria: String, imageUri: String?) {
         val nuevoId = (_productos.value.mapNotNull { it.id }.maxOrNull() ?: 0L) + 1L
-
-        val nuevoProducto = Producto(
-            id = nuevoId,
-            nombre = nombre,
-            descripcion = "Nuevo ingreso",
-            precio = precio,
-            stock = stock,
-            imagenUrl = R.drawable.logo,
-            categoria = categoria,
-            imageUri = imageUri
-        )
-
+        val nuevoProducto = Producto(nuevoId, nombre, "Nuevo ingreso", precio, stock, R.drawable.logo, categoria, imageUri)
         _productos.value = _productos.value + nuevoProducto
     }
 
@@ -192,54 +252,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return _usuarioLogueadoNombre.value
     }
 
-    fun registrarUsuario(nombre: String, correo: String, pass: String, direccion: String) {
-        prefs.edit().apply {
-            putString("USER_NAME", nombre)
-            putString("USER_EMAIL", correo)
-            putString("USER_PASS", pass)
-            putString("USER_DIR", direccion)
-            apply()
-        }
-        val nuevoCliente = Cliente(nombre, correo)
-        if (_listaClientes.value.none { it.email == correo }) {
-            _listaClientes.value = _listaClientes.value + nuevoCliente
-        }
-    }
-
-    fun validarCredencialesPersistidas(): Boolean {
-        val emailInput = _email.value
-        val passInput = _password.value
-
-        if (emailInput == "admin@ggshop.com" && passInput == "admin123") {
-            _esAdmin.value = true
-            _usuarioLogueadoNombre.value = "Administrador Principal"
-            _usuarioLogueadoEmail.value = "admin@ggshop.com"
-            // Cargar foto del admin
-            cargarImagenGuardada("admin@ggshop.com")
-            return true
-        }
-
-        val savedEmail = prefs.getString("USER_EMAIL", "") ?: ""
-        val savedPass = prefs.getString("USER_PASS", "") ?: ""
-        val savedName = prefs.getString("USER_NAME", "Usuario") ?: "Usuario"
-
-        if (emailInput == savedEmail && passInput == savedPass) {
-            _esAdmin.value = false
-            _usuarioLogueadoNombre.value = savedName
-            _usuarioLogueadoEmail.value = savedEmail
-            // Cargar foto del usuario normal
-            cargarImagenGuardada(savedEmail)
-            return true
-        }
-        return false
-    }
-
     fun cerrarSesion() {
         _email.value = ""
         _password.value = ""
         _usuarioLogueadoNombre.value = "Invitado"
         _usuarioLogueadoEmail.value = ""
-        _profileImageUri.value = null // Limpiamos la foto al salir
+        _profileImageUri.value = null
         navigateTo(Screen.Login)
     }
 
@@ -249,18 +267,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _carrito = MutableStateFlow<List<CartItem>>(emptyList())
     val carrito: StateFlow<List<CartItem>> = _carrito.asStateFlow()
-
-    init {
-        cargarProductos()
-        cargarCarritoPersistido()
-
-        // Intentar cargar sesión previa si existe (opcional, pero útil)
-        val savedEmail = prefs.getString("USER_EMAIL", "") ?: ""
-        if (savedEmail.isNotEmpty()) {
-            // Si quieres que cargue la foto apenas abres la app, descomenta esto:
-            // cargarImagenGuardada(savedEmail)
-        }
-    }
 
     fun agregarAlCarrito(producto: Producto, cantidad: Int) {
         val actual = _carrito.value.toMutableList()
