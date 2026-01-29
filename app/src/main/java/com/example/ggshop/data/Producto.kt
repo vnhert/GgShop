@@ -6,7 +6,7 @@ data class Producto(
     val descripcion: String,
     val precio: Int,
     val stock: Int,
-    val imagenUrl: Int,      // imágenes predeterminadas (R.drawable...)
+    val imagenUrl: String,      // imágenes predeterminadas (R.drawable...)
     val categoria: String,
     val imageUri: String? = null // imágenes subidas por el admin
 )

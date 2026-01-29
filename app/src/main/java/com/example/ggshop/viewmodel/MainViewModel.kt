@@ -20,12 +20,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import com.example.ggshop.repository.ProductoRepository
+import android.util.Log
 
 data class CartItem(val producto: Producto, val cantidad: Int)
 data class Cliente(val nombre: String, val email: String)
 data class Venta(val clienteEmail: String, val itemsResumen: String, val total: Int)
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+
+    // --- NUEVO: REPOSITORIO PARA API ---
+    private val productoRepository = ProductoRepository()
 
     private val db = AppDatabase.getDatabase(application)
     private val dao = db.usuariosDao()
@@ -94,7 +99,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         crearUsuarioAdminPorDefecto()
-        cargarProductos()
+
+        // MODIFICADO: Ahora intenta cargar desde el Backend primero
+        cargarProductosDesdeBackend()
+
         cargarCarritoPersistido()
         cargarFavoritosPersistidos()
 
@@ -113,7 +121,47 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // --- CAMBIO 1: El Admin ahora empieza con 0 puntos para que no se vea lleno ---
+    // --- NUEVO: CARGAR PRODUCTOS DESDE EL BACKEND (GUÍA 14) ---
+    fun cargarProductosDesdeBackend() {
+        viewModelScope.launch {
+            try {
+                val listaApi = productoRepository.getProductos()
+                if (listaApi.isNotEmpty()) {
+                    _productos.value = listaApi
+                } else {
+                    cargarProductosLocales()
+                }
+            } catch (e: Exception) {
+                Log.e("API_ERROR", "Error al conectar con el backend: ${e.message}")
+                // Respaldo: Si el backend falla, carga los manuales
+                cargarProductosLocales()
+            }
+        }
+    }
+
+    // --- REFACTORIZADO: Tu lista original ahora es un respaldo ---
+    private fun cargarProductosLocales() {
+        if (_productos.value.isEmpty()) {
+            _productos.value = listOf(
+                // Agregamos .toString() a los recursos R.drawable
+                Producto(1L, "Logitech G502 Hero", "Sensor HERO 25K", 49990, 15, R.drawable.mousee.toString(), "GAMING"),
+                Producto(2L, "Teclado Redragon", "Mecánico TKL", 32990, 8, R.drawable.teclado.toString(), "GAMING"),
+                Producto(5L, "Audífonos HyperX", "Surround 7.1", 85990, 10, R.drawable.audi.toString(), "GAMING"),
+                Producto(6L, "Monitor ASUS TUF", "165Hz, 1ms", 249990, 4, R.drawable.moni.toString(), "GAMING"),
+                Producto(7L, "Mousepad SteelSeries", "Tela micro-tejida", 15990, 20, R.drawable.mousepad.toString(), "GAMING"),
+                Producto(8L, "Silla Gamer Corsair", "Ergonómica", 299990, 2, R.drawable.silla.toString(), "GAMING"),
+                Producto(3L, "iPhone 15 128GB", "Chip A16", 799990, 5, R.drawable.iphone.toString(), "CELULARES"),
+                Producto(4L, "Galaxy S24 Ultra", "QHD+ y S-Pen", 1199990, 3, R.drawable.samsung.toString(), "CELULARES"),
+                Producto(10L, "Pixel 8 Pro", "IA Google", 899990, 4, R.drawable.google.toString(), "CELULARES"),
+                Producto(11L, "Moto Edge 40", "Pantalla curva", 279990, 7, R.drawable.motorola.toString(), "CELULARES"),
+                Producto(12L, "Nothing Phone (2)", "Glyph Interface", 549990, 6, R.drawable.nothing.toString(), "CELULARES"),
+                Producto(13L, "Xiaomi 13T Pro", "Lente Leica", 599990, 9, R.drawable.xiaomi.toString(), "CELULARES")
+            )
+        }
+    }
+
+    // --- EL RESTO DE TUS FUNCIONES SE MANTIENEN INTACTAS ---
+
     private fun crearUsuarioAdminPorDefecto() {
         viewModelScope.launch(Dispatchers.IO) {
             val admin = dao.obtenerPorEmail("admin@ggshop.com")
@@ -124,7 +172,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         nombre = "Administrador Principal",
                         password = "admin123",
                         imageUri = null,
-                        puntos = 0 // <--- AHORA EMPIEZA EN CERO
+                        puntos = 0
                     )
                 )
             }
@@ -134,25 +182,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun validarLogin() {
         val emailInput = _email.value.trim()
         val passInput = _password.value.trim()
-
         viewModelScope.launch(Dispatchers.IO) {
             val usuarioEncontrado = dao.login(emailInput, passInput)
-
             withContext(Dispatchers.Main) {
                 if (usuarioEncontrado != null) {
                     _loginError.value = false
-
-                    if (usuarioEncontrado.email == "admin@ggshop.com") {
-                        _esAdmin.value = true
-                    } else {
-                        _esAdmin.value = false
-                    }
-
+                    _esAdmin.value = usuarioEncontrado.email == "admin@ggshop.com"
                     _usuarioLogueadoNombre.value = usuarioEncontrado.nombre
                     _usuarioLogueadoEmail.value = usuarioEncontrado.email
                     _profileImageUri.value = if (usuarioEncontrado.imageUri != null) Uri.parse(usuarioEncontrado.imageUri) else null
                     _puntosUsuario.value = usuarioEncontrado.puntos
-
                     cargarFavoritosDelUsuario()
                     navigateTo(Screen.MainScreen)
                 } else {
@@ -174,7 +213,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val emailActual = _usuarioLogueadoEmail.value
         _usuarioLogueadoNombre.value = nuevoNombre
         if (nuevoEmail != emailActual) _usuarioLogueadoEmail.value = nuevoEmail
-
         viewModelScope.launch(Dispatchers.IO) {
             val usuarioActual = dao.obtenerPorEmail(emailActual) ?: return@launch
             val passFinal = if (nuevaPass.isNotBlank()) nuevaPass else usuarioActual.password
@@ -228,15 +266,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // --- CAMBIO 2: DIFICULTAD AUMENTADA ---
     fun canjearPuntosPorJuego(juego: String, horas: Int) {
         val email = _usuarioLogueadoEmail.value
         if (email == "invitado@ggshop.com") return
-
-        // ANTES: 100 puntos x hora (Muy fácil)
-        // AHORA: 25 puntos x hora (Difícil: requiere 4000 horas para el max)
         val puntosGanados = horas * 25
-
         viewModelScope.launch(Dispatchers.IO) {
             dao.sumarPuntos(email, puntosGanados)
             val usuarioActualizado = dao.obtenerPorEmail(email)
@@ -246,28 +279,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // Mantengo esta función por compatibilidad con tu código actual
     fun cargarProductos() {
-        if (_productos.value.isEmpty()) {
-            _productos.value = listOf(
-                Producto(1L, "Logitech G502 Hero", "Sensor HERO 25K", 49990, 15, R.drawable.mousee, "GAMING"),
-                Producto(2L, "Teclado Redragon", "Mecánico TKL", 32990, 8, R.drawable.teclado, "GAMING"),
-                Producto(5L, "Audífonos HyperX", "Surround 7.1", 85990, 10, R.drawable.audi, "GAMING"),
-                Producto(6L, "Monitor ASUS TUF", "165Hz, 1ms", 249990, 4, R.drawable.moni, "GAMING"),
-                Producto(7L, "Mousepad SteelSeries", "Tela micro-tejida", 15990, 20, R.drawable.mousepad, "GAMING"),
-                Producto(8L, "Silla Gamer Corsair", "Ergonómica", 299990, 2, R.drawable.silla, "GAMING"),
-                Producto(3L, "iPhone 15 128GB", "Chip A16", 799990, 5, R.drawable.iphone, "CELULARES"),
-                Producto(4L, "Galaxy S24 Ultra", "QHD+ y S-Pen", 1199990, 3, R.drawable.samsung, "CELULARES"),
-                Producto(10L, "Pixel 8 Pro", "IA Google", 899990, 4, R.drawable.google, "CELULARES"),
-                Producto(11L, "Moto Edge 40", "Pantalla curva", 279990, 7, R.drawable.motorola, "CELULARES"),
-                Producto(12L, "Nothing Phone (2)", "Glyph Interface", 549990, 6, R.drawable.nothing, "CELULARES"),
-                Producto(13L, "Xiaomi 13T Pro", "Lente Leica", 599990, 9, R.drawable.xiaomi, "CELULARES")
-            )
-        }
+        cargarProductosLocales()
     }
 
     fun agregarProducto(nombre: String, precio: Int, stock: Int, categoria: String, imageUri: String?) {
         val nuevoId = (_productos.value.mapNotNull { it.id }.maxOrNull() ?: 0L) + 1L
-        val nuevoProducto = Producto(nuevoId, nombre, "Nuevo ingreso", precio, stock, R.drawable.logo, categoria, imageUri)
+
+        // Convertimos el R.drawable.logo a String para que coincida con el modelo
+        val nuevoProducto = Producto(
+            id = nuevoId,
+            nombre = nombre,
+            descripcion = "Nuevo ingreso",
+            precio = precio,
+            stock = stock,
+            imagenUrl = R.drawable.logo.toString(), // <--- CORRECCIÓN AQUÍ
+            categoria = categoria,
+            imageUri = imageUri
+        )
         _productos.value = _productos.value + nuevoProducto
     }
     fun editarProducto(productoEditado: Producto) {

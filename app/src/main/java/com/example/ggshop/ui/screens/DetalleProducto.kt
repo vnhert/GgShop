@@ -28,7 +28,11 @@ import com.example.ggshop.ui.theme.TechBlack
 import com.example.ggshop.ui.theme.TechYellow
 import com.example.ggshop.ui.theme.GgShopTheme
 import com.example.ggshop.viewmodel.MainViewModel
-
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.res.painterResource
+import com.example.ggshop.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleProducto(viewModel: MainViewModel = viewModel()) {
@@ -143,10 +147,15 @@ private fun ProductImageAndControls(
         contentAlignment = Alignment.Center
     ) {
         AsyncImage(
-            model = producto.imagenUrl,
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(producto.imagenUrl) // Ahora esto es un String
+                .crossfade(true)
+                .build(),
             contentDescription = producto.nombre,
-            modifier = Modifier.fillMaxHeight().padding(24.dp),
-            contentScale = ContentScale.Fit
+            modifier = Modifier.fillMaxSize().padding(24.dp),
+            contentScale = ContentScale.Fit,
+            error = painterResource(id = R.drawable.logo), // Logo si falla la URL
+            placeholder = painterResource(id = R.drawable.logo)
         )
 
         IconButton(

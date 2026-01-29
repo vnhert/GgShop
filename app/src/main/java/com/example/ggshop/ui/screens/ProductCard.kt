@@ -21,18 +21,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.ggshop.R
 import com.example.ggshop.data.Producto
-import com.example.ggshop.navigation.Screen
-import com.example.ggshop.ui.theme.TechBlack
-import com.example.ggshop.ui.theme.TechYellow
 import com.example.ggshop.viewmodel.MainViewModel
+import com.example.ggshop.navigation.Screen
+
+// Colores personalizados (Asegúrate de tenerlos en tu Color.kt o cámbialos por Color.Yellow/Black)
+val TechYellow = Color(0xFFFFD700)
+val TechBlack = Color(0xFF1A1A1A)
 
 @Composable
 fun ProductoCard(producto: Producto, viewModel: MainViewModel) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    // Animación de rebote al pulsar
+    // Animación de rebote al pulsar (Feedback visual)
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.90f else 1f,
         animationSpec = spring(
@@ -70,29 +73,23 @@ fun ProductoCard(producto: Producto, viewModel: MainViewModel) {
                     .height(140.dp)
                     .background(Color.White)
             ) {
-                // --- CAMBIO AQUI: Lógica para mostrar imagen de Galería o Recurso ---
-                if (producto.imageUri != null) {
-                    // 1. Si el admin subió una foto (URI), usamos Coil
-                    AsyncImage(
-                        model = producto.imageUri,
-                        contentDescription = producto.nombre,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp),
-                        contentScale = ContentScale.Fit
-                    )
-                } else {
-                    // 2. Si no hay foto nueva, usamos el recurso local (R.drawable...)
-                    Image(
-                        painter = painterResource(id = producto.imagenUrl),
-                        contentDescription = producto.nombre,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(8.dp),
-                        contentScale = ContentScale.Fit
-                    )
-                }
-                // -------------------------------------------------------------------
+                /* LOGICA DE IMAGEN ESTILO ROSA PASTEL:
+                   Intentamos cargar el String 'imagenUrl' que viene del Backend.
+                   Si es un link de internet, AsyncImage lo descarga.
+                   Si es nulo o falla, muestra el logo de la tienda.
+                */
+                AsyncImage(
+                    model = producto.imagenUrl,
+                    contentDescription = producto.nombre,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    contentScale = ContentScale.Fit,
+                    // Mientras carga la imagen desde el backend
+                    placeholder = painterResource(id = R.drawable.logo),
+                    // Si el backend no tiene imagen o el link está roto
+                    error = painterResource(id = R.drawable.logo)
+                )
             }
 
             Column(modifier = Modifier.padding(12.dp)) {
@@ -116,6 +113,7 @@ fun ProductoCard(producto: Producto, viewModel: MainViewModel) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Botón decorativo estilo RosaPastelApp
                 Surface(
                     color = TechYellow,
                     shape = RoundedCornerShape(4.dp)

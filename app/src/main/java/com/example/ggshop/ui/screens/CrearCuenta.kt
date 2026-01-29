@@ -26,8 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 
 private val FondoGrisTech = Color(0xFFF2F2F2)
-private val TechYellow = Color(0xFFFFD700)
-private val TechBlack = Color(0xFF000000)
+
 
 @Composable
 fun CrearCuenta(viewModel: MainViewModel) {

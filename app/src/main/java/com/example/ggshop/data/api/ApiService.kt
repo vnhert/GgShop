@@ -4,7 +4,7 @@ import com.example.ggshop.data.Producto
 import retrofit2.http.GET
 
 interface ApiService {
-
-    @GET("productos")
+    // Se añade "api/" porque así lo definimos en el @RequestMapping del Backend
+    @GET("api/productos")
     suspend fun getProductos(): List<Producto>
 }

@@ -24,11 +24,11 @@ import com.example.ggshop.navigation.Screen
 import com.example.ggshop.viewmodel.MainViewModel
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.animateFloatAsState
+import com.example.ggshop.ui.theme.TechBlack
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val TechYellow = Color(0xFFFFD700)
-private val TechBlack = Color(0xFF000000)
+
 private val TechGreen = Color(0xFF00C853)
 
 @Composable
