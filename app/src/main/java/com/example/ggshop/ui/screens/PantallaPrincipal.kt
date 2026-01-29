@@ -26,7 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext // <--- AÑADIDO
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage // <--- AÑADIDO
+import coil.request.ImageRequest // <--- AÑADIDO
 import com.example.ggshop.R
 import com.example.ggshop.data.Producto
 import com.example.ggshop.navigation.Screen
@@ -77,10 +80,8 @@ fun PantallaPrincipal(viewModel: MainViewModel = viewModel()) {
         ) {
             PromoBanner()
 
-            // --- SECCIÓN DE PESTAÑAS (GAMING / CELULARES) ---
             TabsTech(tabSeleccionada = tabSeleccionada, onTabSelected = { tabSeleccionada = it })
 
-            // --- LISTA DE PRODUCTOS ---
             ContenidoTech(
                 viewModel = viewModel,
                 productos = productos,
@@ -91,8 +92,6 @@ fun PantallaPrincipal(viewModel: MainViewModel = viewModel()) {
     }
 }
 
-// (El banner GamerZoneBanner ha sido eliminado de este archivo porque ahora vive en PerfilUsuario.kt)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TopBarPrincipal(
@@ -102,9 +101,7 @@ private fun TopBarPrincipal(
     onToggleBusqueda: () -> Unit,
     onTextoChange: (String) -> Unit
 ) {
-    // Escuchamos si el usuario actual es Administrador
     val esAdmin by viewModel.esAdmin.collectAsState()
-
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (isPressed) 0.8f else 1f, label = "logoutScale")
@@ -166,11 +163,7 @@ private fun TopBarPrincipal(
             IconButton(
                 onClick = {
                     if (estaBuscando) {
-                        if (textoBusqueda.isNotEmpty()) {
-                            onTextoChange("")
-                        } else {
-                            onToggleBusqueda()
-                        }
+                        if (textoBusqueda.isNotEmpty()) onTextoChange("") else onToggleBusqueda()
                     } else {
                         onToggleBusqueda()
                     }
@@ -180,14 +173,9 @@ private fun TopBarPrincipal(
             }
 
             if (!estaBuscando) {
-                // --- BOTÓN DE PANEL ADMINISTRADOR ---
                 if (esAdmin) {
                     IconButton(onClick = { viewModel.navigateTo(Screen.Inventory) }) {
-                        Icon(
-                            imageVector = Icons.Default.EditNote,
-                            contentDescription = "Panel Admin",
-                            tint = TechYellow
-                        )
+                        Icon(imageVector = Icons.Default.EditNote, contentDescription = "Panel Admin", tint = TechYellow)
                     }
                 }
 
@@ -255,9 +243,10 @@ private fun ContenidoTech(
                 productosFiltrados.chunked(2).forEachIndexed { indexFila, fila ->
                     Row(modifier = Modifier.fillMaxWidth()) {
                         fila.forEach { producto ->
-                            var animado by remember(categoriaBuscada, query) { mutableStateOf(false) }
+                            // Usamos el ID como clave para que la animación se refresque con el contenido real
+                            var animado by remember(producto.id) { mutableStateOf(false) }
 
-                            LaunchedEffect(categoriaBuscada, query) {
+                            LaunchedEffect(producto.id) {
                                 animado = true
                             }
 
@@ -270,7 +259,6 @@ private fun ContenidoTech(
                                         ),
                                 modifier = Modifier.weight(1f).padding(4.dp)
                             ) {
-                                // Llamamos al componente de la tarjeta
                                 ProductoCard(producto = producto, viewModel = viewModel)
                             }
                         }

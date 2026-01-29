@@ -113,7 +113,7 @@ fun ProductoCard(producto: Producto, viewModel: MainViewModel) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Botón decorativo estilo RosaPastelApp
+
                 Surface(
                     color = TechYellow,
                     shape = RoundedCornerShape(4.dp)
