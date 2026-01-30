@@ -5,6 +5,6 @@ import retrofit2.http.GET
 
 interface ApiService {
     // Se añade "api/" porque así lo definimos en el @RequestMapping del Backend
-    @GET("api/productos")
+    @GET("api/products")
     suspend fun getProductos(): List<Producto>
 }
