@@ -8,5 +8,5 @@ data class Producto(
     val stock: Int,
     val imagenUrl: String,      // imágenes predeterminadas (R.drawable...)
     val categoria: String,
-    val imageUri: String? = null // imágenes subidas por el admin
+    val imageUrl: String? = null // imágenes subidas por el admin
 )

@@ -296,7 +296,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             stock = stock,
             imagenUrl = R.drawable.logo.toString(), // <--- CORRECCIÓN AQUÍ
             categoria = categoria,
-            imageUri = imageUri
+            imageUrl = imageUri
         )
         _productos.value = _productos.value + nuevoProducto
     }

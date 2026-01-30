@@ -71,7 +71,7 @@ fun PerfilAdministrador(viewModel: MainViewModel) {
             tempStock = producto.stock.toString()
             tempCategoria = producto.categoria
             // Si el producto ya tenía una URI guardada, la convertimos para mostrarla
-            tempImageUri = producto.imageUri?.let { Uri.parse(it) }
+            tempImageUri = producto.imageUrl?.let { Uri.parse(it) }
         } else {
             // MODO AGREGAR: Limpiar todo
             tempNombre = ""
@@ -251,14 +251,14 @@ fun PerfilAdministrador(viewModel: MainViewModel) {
                                     )
                                 } else {
                                     // EDITAR: Mantenemos la imagen vieja si no seleccionó una nueva
-                                    val uriFinal = tempImageUri?.toString() ?: productoEditando!!.imageUri
+                                    val uriFinal = tempImageUri?.toString() ?: productoEditando!!.imageUrl
 
                                     val productoActualizado = productoEditando!!.copy(
                                         nombre = tempNombre,
                                         precio = tempPrecio.toIntOrNull() ?: 0,
                                         stock = tempStock.toIntOrNull() ?: 0,
                                         categoria = tempCategoria,
-                                        imageUri = uriFinal // <--- Actualizamos o mantenemos
+                                        imageUrl = uriFinal // <--- Actualizamos o mantenemos
                                     )
                                     viewModel.editarProducto(productoActualizado)
                                 }
