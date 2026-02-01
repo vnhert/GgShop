@@ -57,7 +57,7 @@ fun AppNavHost(viewModel: MainViewModel = viewModel()) {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Login.route,
+            startDestination = Screen.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(route = Screen.Home.route) { HomeScreen(viewModel = viewModel) }
