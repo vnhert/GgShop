@@ -4,9 +4,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
-
-    private const val BASE_URL = "https://zcp1fl76-8080.brs.devtunnels.ms/"
-
+    // AGREGAR :8082 AL FINAL. ¡ESTO ES LO QUE FALTA!
+    private const val BASE_URL = "http://192.168.1.5:8082/"
 
     val api: ApiService by lazy {
         Retrofit.Builder()

@@ -25,7 +25,7 @@ import com.example.ggshop.ui.theme.TechBlack
 import com.example.ggshop.ui.theme.TechYellow
 import com.example.ggshop.viewmodel.MainViewModel
 
-// OSMDroid imports
+// OSMDroid imports para el mapa
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -49,7 +49,7 @@ fun Sucursales(viewModel: MainViewModel) {
     var selectedStoreIndex by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
 
-    // Configuración de OSMDroid
+    // Configuración de OSMDroid (Mapa)
     remember {
         Configuration.getInstance().userAgentValue = context.packageName
         Configuration.getInstance().load(context, context.getSharedPreferences("osmdroid", 0))
@@ -57,7 +57,6 @@ fun Sucursales(viewModel: MainViewModel) {
 
     val mapCenter = remember { GeoPoint(-33.4357, -70.6136) }
 
-    // SCAFFOLD: Proporciona la estructura para la barra superior
     Scaffold(
         topBar = {
             TopAppBar(
@@ -65,8 +64,8 @@ fun Sucursales(viewModel: MainViewModel) {
                     Text("PUNTOS DE RETIRO", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
                 },
                 navigationIcon = {
-                    // ESTE BOTÓN CORRIGE EL ERROR DE NAVEGACIÓN
-                    IconButton(onClick = { viewModel.navigateUp() }) {
+                    // CORRECCIÓN: Se cambió navigateUp() por navigateBack()
+                    IconButton(onClick = { viewModel.navigateBack() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Volver",
@@ -78,18 +77,17 @@ fun Sucursales(viewModel: MainViewModel) {
             )
         }
     ) { paddingValues ->
-        // Contenido con Scroll
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.White)
-                .padding(paddingValues) // Respeta el espacio de la TopBar
+                .padding(paddingValues)
                 .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ENCABEZADO ESTILO GGSHOP
+            // ENCABEZADO GGSHOP
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -134,7 +132,6 @@ fun Sucursales(viewModel: MainViewModel) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // MAPA (RECURSO NATIVO)
             Text(
                 text = "UBICACIÓN EN MAPA",
                 style = MaterialTheme.typography.labelLarge,
@@ -144,6 +141,7 @@ fun Sucursales(viewModel: MainViewModel) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // CONTENEDOR DEL MAPA
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -166,11 +164,9 @@ fun Sucursales(viewModel: MainViewModel) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // BOTÓN DE ACCIÓN
+            // BOTÓN DE ACCIÓN CORREGIDO
             Button(
-                onClick = { /* Lógica para confirmar y volver */
-                    viewModel.navigateUp()
-                },
+                onClick = { viewModel.navigateBack() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -234,4 +230,3 @@ fun StoreCard(
         }
     }
 }
-

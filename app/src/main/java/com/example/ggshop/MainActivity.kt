@@ -16,7 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ggshop.navigation.NavigationEvent
 import com.example.ggshop.navigation.Screen
 import com.example.ggshop.viewmodel.MainViewModel
-import com.example.ggshop.ui.screens.* // Importamos todas tus pantallas
+import com.example.ggshop.ui.screens.*
 import com.example.ggshop.ui.theme.GgShopTheme
 import kotlinx.coroutines.flow.collectLatest
 
@@ -35,15 +35,14 @@ class MainActivity : ComponentActivity() {
 fun AppNavHost(viewModel: MainViewModel = viewModel()) {
     val navController = rememberNavController()
 
+    // ESCUCHADOR DE EVENTOS: Procesa las órdenes del ViewModel
     LaunchedEffect(key1 = Unit) {
         viewModel.navigationEvents.collectLatest { event ->
             when (event) {
                 is NavigationEvent.NavigateTo -> {
                     navController.navigate(route = event.route.route) {
                         event.popupToRoute?.let {
-                            popUpTo(route = it.route) {
-                                inclusive = event.inclusive
-                            }
+                            popUpTo(route = it.route) { inclusive = event.inclusive }
                         }
                         launchSingleTop = event.singleTop
                         restoreState = true
@@ -58,54 +57,31 @@ fun AppNavHost(viewModel: MainViewModel = viewModel()) {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = Screen.Login.route,
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable(route = Screen.Home.route) { HomeScreen(viewModel = viewModel) }
+            composable(route = Screen.Login.route) { InicioSesion(viewModel = viewModel) }
+            composable(route = Screen.Register.route) { CrearCuenta(viewModel = viewModel) }
+            composable(route = Screen.MainScreen.route) { PantallaPrincipal(viewModel = viewModel) }
+            composable(route = Screen.Stores.route) { Sucursales(viewModel = viewModel) }
+            composable(route = Screen.Profile.route) { PerfilUsuario(viewModel = viewModel) }
+            composable(route = Screen.Cart.route) { Carrito(viewModel = viewModel) }
+            composable(route = Screen.EditProfile.route) { EditarUsuario(viewModel = viewModel) }
+            composable(route = Screen.Favorites.route) { Favoritos(viewModel = viewModel) }
 
-            composable(route = Screen.Home.route) {
-                HomeScreen(viewModel = viewModel)
-            }
-            composable(route = Screen.Login.route) {
-                InicioSesion(viewModel = viewModel)
-            }
-            composable(route = Screen.Register.route) {
-                CrearCuenta(viewModel = viewModel)
-            }
-            composable(route = Screen.MainScreen.route) {
-                PantallaPrincipal(viewModel = viewModel)
-            }
-            composable(route = Screen.Stores.route) {
-                Sucursales(viewModel = viewModel)
-            }
+            // PANEL DE CONTROL: Aquí ves las pestañas de Clientes, Ventas y Stock
+            composable(route = Screen.Inventory.route) { PerfilAdministrador(viewModel = viewModel) }
 
-            composable(route = Screen.Profile.route) {
-                PerfilUsuario(viewModel = viewModel)
-            }
-            composable(route = Screen.Cart.route) {
-                Carrito(viewModel = viewModel)
-            }
-            // Mantenemos este por si acaso lo usas en otro lado
-            composable(route = Screen.ProductDetail.route) {
-                DetalleProducto(viewModel = viewModel)
-            }
-            composable(route = Screen.EditProfile.route) {
-                EditarUsuario(viewModel = viewModel)
-            }
-            composable(route = Screen.Favorites.route){
-                Favoritos(viewModel = viewModel)
-            }
-            composable(route = Screen.Inventory.route) {
-                PerfilAdministrador(viewModel = viewModel)
+            // --- NUEVO DESTINO: FORMULARIO DE PRODUCTOS ---
+            // Aquí es donde los botones (+) y Lápiz navegarán realmente
+            composable(route = Screen.ProductForm.route) {
+                // Se asume que tienes una pantalla llamada FormularioProducto para gestionar el stock
+                FormularioProducto(viewModel = viewModel)
             }
 
-            // --- PARA FAVORITOS ---
-            composable(route = Screen.Detail.route) {
-                DetalleProducto(viewModel = viewModel)
-            }
-            //Para juegos
-            composable(route = Screen.GamerZone.route) {
-                GamerZone(viewModel = viewModel)
-            }
+            composable(route = Screen.Detail.route) { DetalleProducto(viewModel = viewModel) }
+            composable(route = Screen.GamerZone.route) { GamerZone(viewModel = viewModel) }
         }
     }
 }

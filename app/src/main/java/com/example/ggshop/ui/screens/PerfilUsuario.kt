@@ -3,16 +3,14 @@ package com.example.ggshop.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,25 +22,28 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.ggshop.R
 import com.example.ggshop.navigation.Screen
+import com.example.ggshop.viewmodel.MainViewModel
 import com.example.ggshop.ui.theme.TechBlack
 import com.example.ggshop.ui.theme.TechYellow
-import com.example.ggshop.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilUsuario(viewModel: MainViewModel) {
-    // Datos del usuario
     val nombre by viewModel.usuarioLogueadoNombre.collectAsState()
     val email by viewModel.usuarioLogueadoEmail.collectAsState()
-    val imageUri by viewModel.profileImageUri.collectAsState()
+    val imagenUri by viewModel.profileImageUri.collectAsState()
+    val puntos by viewModel.puntosUsuario.collectAsState()
+
+    // 1. RECUPERAMOS EL ESTADO DE ADMIN
+    val esAdmin by viewModel.esAdmin.collectAsState()
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("ACCOUNT", fontWeight = FontWeight.Bold, letterSpacing = 2.sp) },
+                title = { Text("MI PERFIL", fontWeight = FontWeight.Black) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, null)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
@@ -54,127 +55,122 @@ fun PerfilUsuario(viewModel: MainViewModel) {
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // --- FOTO Y NOMBRE ---
-            Box(contentAlignment = Alignment.BottomEnd) {
-                AsyncImage(
-                    model = imageUri ?: R.drawable.profile_pic, // Tu imagen por defecto
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .background(Color.LightGray),
-                    contentScale = ContentScale.Crop
-                )
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(TechBlack)
-                        .clickable { viewModel.navigateTo(Screen.EditProfile) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Edit, null, tint = TechYellow, modifier = Modifier.size(20.dp))
-                }
-            }
+            // FOTO DE PERFIL
+            AsyncImage(
+                model = imagenUri ?: R.drawable.profile_pic,
+                contentDescription = "Foto de perfil",
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(Color.LightGray),
+                contentScale = ContentScale.Crop
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(nombre, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
-            Text(email, color = Color.Gray, fontSize = 14.sp)
+            Text(text = nombre, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = TechBlack)
+            Text(text = email, style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // --- BANNER GAMER ZONE ---
-            GamerZoneBannerPerfil(viewModel = viewModel)
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // --- LISTA DE OPCIONES (COMPLETA) ---
-            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
-                Text("CONFIGURACION", fontWeight = FontWeight.Bold, color = Color.Gray, fontSize = 12.sp, letterSpacing = 1.sp)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                OpcionPerfil(icon = Icons.Default.Edit, text = "Editar Perfil") {
-                    viewModel.navigateTo(Screen.EditProfile)
-                }
-                OpcionPerfil(icon = Icons.Default.Settings, text = "Preferencias") {
-                    // Acción futura
-                }
-                OpcionPerfil(icon = Icons.Default.Notifications, text = "Alertas y Drops") {
-                    // Acción futura
-                }
-                // --- CAMBIO AQUÍ: ---
-                OpcionPerfil(icon = Icons.Default.Lock, text = "Privacidad y seguridad") {
-                    // Acción futura
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Button(
-                    onClick = { viewModel.cerrarSesion() },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEBEE), contentColor = Color.Red),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+            Card(
+                onClick = { viewModel.navigateTo(Screen.GamerZone) },
+                modifier = Modifier.fillMaxWidth().height(80.dp),
+                colors = CardDefaults.cardColors(containerColor = TechBlack),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Cerrar Sesión", fontWeight = FontWeight.Bold)
+                    Column {
+                        Text("GAMER ZONE", color = TechYellow, fontWeight = FontWeight.Black, fontSize = 20.sp)
+                        Text("$puntos Puntos acumulados", color = Color.White, fontSize = 12.sp)
+                    }
+                    Icon(Icons.Default.Gamepad, null, tint = TechYellow, modifier = Modifier.size(40.dp))
                 }
-                Spacer(modifier = Modifier.height(32.dp))
             }
-        }
-    }
-}
 
-@Composable
-fun OpcionPerfil(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFF5F5F5)), contentAlignment = Alignment.Center) {
-                Icon(icon, null, tint = TechBlack, modifier = Modifier.size(20.dp))
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(text, fontWeight = FontWeight.Medium)
-        }
-        Icon(Icons.Default.ChevronRight, null, tint = Color.Gray)
-    }
-}
+            Spacer(modifier = Modifier.height(24.dp))
 
-@Composable
-fun GamerZoneBannerPerfil(viewModel: MainViewModel) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .clickable { viewModel.navigateTo(Screen.GamerZone) },
-        colors = CardDefaults.cardColors(containerColor = TechBlack),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(vertical = 20.dp, horizontal = 24.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(Icons.Filled.Star, contentDescription = null, tint = TechYellow)
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = "LISTO PARA EL SIGUIENTE NIVEL?",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
-                color = Color.White
+            // --- LISTA DE OPCIONES ---
+
+            MenuOptionItem(
+                icon = Icons.Default.Edit,
+                title = "Editar Perfil",
+                onClick = { viewModel.navigateTo(Screen.EditProfile) }
             )
+
+            // 2. APLICAMOS EL CANDADO DE SEGURIDAD AQUÍ
+            // Solo se muestra si 'esAdmin' es VERDADERO
+            if (esAdmin) {
+                MenuOptionItem(
+                    icon = Icons.Default.Settings,
+                    title = "Panel de Administrador",
+                    onClick = { viewModel.navigateTo(Screen.Inventory) }
+                )
+            }
+
+            MenuOptionItem(
+                icon = Icons.Default.Settings,
+                title = "Configuración y preferencias",
+                onClick = { /* Acción futura */ }
+            )
+
+            MenuOptionItem(
+                icon = Icons.Default.Notifications,
+                title = "Alertas y Drops",
+                onClick = { /* Acción futura */ }
+            )
+
+            MenuOptionItem(
+                icon = Icons.Default.Lock,
+                title = "Privacidad y seguridad",
+                onClick = { /* Acción futura */ }
+            )
+
+            MenuOptionItem(
+                icon = Icons.Default.LocationOn,
+                title = "Nuestras Sucursales",
+                onClick = { /* Acción futura */ }
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Button(
+                onClick = { viewModel.cerrarSesion() },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.ExitToApp, contentDescription = null, tint = Color.White)
+                Spacer(Modifier.width(8.dp))
+                Text("CERRAR SESIÓN", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+fun MenuOptionItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+    ) {
+        Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = TechBlack)
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(text = title, fontWeight = FontWeight.Bold, color = TechBlack)
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
         }
     }
 }

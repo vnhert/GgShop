@@ -15,281 +15,199 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
-import com.example.ggshop.data.Producto
-import com.example.ggshop.navigation.Screen
-import com.example.ggshop.ui.theme.TechBlack
-import com.example.ggshop.ui.theme.TechYellow
-import com.example.ggshop.ui.theme.GgShopTheme
-import com.example.ggshop.viewmodel.MainViewModel
-import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import androidx.compose.ui.res.painterResource
 import com.example.ggshop.R
+import com.example.ggshop.ui.theme.TechBlack
+import com.example.ggshop.ui.theme.TechYellow
+import com.example.ggshop.viewmodel.MainViewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetalleProducto(viewModel: MainViewModel = viewModel()) {
+fun DetalleProducto(viewModel: MainViewModel) {
     val context = LocalContext.current
     val productoSeleccionado by viewModel.productoSeleccionado.collectAsState()
+    val favoritos by viewModel.favoritos.collectAsState()
     var quantity by remember { mutableIntStateOf(1) }
 
-    // Obtenemos lista de favoritos
-    val favoritos by viewModel.favoritos.collectAsState()
-
+    // Si no hay producto seleccionado, mostramos carga o volvemos atrás
     if (productoSeleccionado == null) {
-        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
-            Text("Buscando el gadget seleccionado...", color = TechBlack)
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = TechBlack)
         }
         return
     }
 
     val producto = productoSeleccionado!!
-    // Verificamos si este producto ya es favorito
     val esFavorito = favoritos.any { it.id == producto.id }
 
     Scaffold(
-        topBar = { TopBarDetalleProducto(viewModel) },
-        bottomBar = {
-            BottomNavBarPrincipal(viewModel = viewModel, itemSeleccionado = "Home")
-        },
-        containerColor = Color.White
-    ) { innerPadding ->
+        topBar = {
+            TopAppBar(
+                title = { Text("Detalle", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    // ARREGLO NAVEGACIÓN: Usamos navigateBack() del ViewModel
+                    IconButton(onClick = { viewModel.navigateBack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White,
+                    titleContentColor = TechBlack
+                )
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
-                .padding(innerPadding)
+                .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .background(Color.White)
         ) {
-            // Pasamos estado y función lambda para toggle
-            ProductImageAndControls(
-                producto = producto,
-                esFavorito = esFavorito,
-                onToggleFavorito = { viewModel.toggleFavorito(producto) }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            ProductInfoSection(
-                title = producto.nombre,
-                price = "$${producto.precio}",
-                category = producto.categoria,
-                description = producto.descripcion
-            )
-
-            QuantitySelector(
-                quantity = quantity,
-                onQuantityChange = { quantity = it }
-            )
-
-            Button(
-                onClick = {
-                    viewModel.agregarAlCarrito(producto, quantity)
-                    Toast.makeText(
-                        context,
-                        "Añadido: ${producto.nombre} (x$quantity)",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                },
+            // --- 1. IMAGEN GRANDE ---
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = TechYellow,
-                    contentColor = TechBlack
-                ),
-                shape = RoundedCornerShape(12.dp)
+                    .height(300.dp)
+                    .background(Color.White),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.ShoppingCart, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    "AÑADIR AL CARRITO",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.ExtraBold)
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(producto.imagenUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    modifier = Modifier.size(250.dp), // Tamaño controlado
+                    contentScale = ContentScale.Fit,
+                    error = painterResource(R.drawable.logo),
+                    placeholder = painterResource(R.drawable.logo)
                 )
+
+                // Botón de Favorito flotante
+                IconButton(
+                    onClick = { viewModel.toggleFavorito(producto) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(50))
+                ) {
+                    Icon(
+                        imageVector = if (esFavorito) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = null,
+                        tint = if (esFavorito) Color.Red else TechBlack
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(32.dp))
-        }
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TopBarDetalleProducto(viewModel: MainViewModel) {
-    TopAppBar(
-        title = { Text("Detalle", fontWeight = FontWeight.Bold) },
-        navigationIcon = {
-            IconButton(onClick = { viewModel.navigateTo(Screen.MainScreen) }) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Volver", tint = TechBlack)
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-    )
-}
+            // --- 2. INFORMACIÓN DEL PRODUCTO ---
+            Column(modifier = Modifier.padding(24.dp)) {
+                // Categoría y Calificación (RECUPERADO)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = producto.categoria.uppercase(),
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
 
-@Composable
-private fun ProductImageAndControls(
-    producto: Producto,
-    esFavorito: Boolean,
-    onToggleFavorito: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp)
-            .background(Color.White),
-        contentAlignment = Alignment.Center
-    ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(producto.imagenUrl) // Ahora esto es un String
-                .crossfade(true)
-                .build(),
-            contentDescription = producto.nombre,
-            modifier = Modifier.fillMaxSize().padding(24.dp),
-            contentScale = ContentScale.Fit,
-            error = painterResource(id = R.drawable.logo), // Logo si falla la URL
-            placeholder = painterResource(id = R.drawable.logo)
-        )
+                    // Estrellas ficticias (puedes hacerlas dinámicas luego)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Star, null, tint = TechYellow, modifier = Modifier.size(16.dp))
+                        Text(" 4.8", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(" (120 reviews)", color = Color.Gray, fontSize = 12.sp)
+                    }
+                }
 
-        IconButton(
-            onClick = onToggleFavorito, // Ejecutamos la acción del VM
-            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
-        ) {
-            Icon(
-                // Cambia ícono: Relleno si es favorito, Borde si no
-                imageVector = if (esFavorito) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                contentDescription = "Favorito",
-                // Cambia color: Rojo si es favorito, Negro si no
-                tint = if (esFavorito) Color.Red else TechBlack,
-                modifier = Modifier.size(28.dp)
-            )
-        }
-    }
-}
+                Spacer(Modifier.height(8.dp))
 
-@Composable
-fun ProductInfoSection(
-    title: String,
-    price: String,
-    category: String,
-    description: String
-) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Text(
-            category.uppercase(),
-            style = MaterialTheme.typography.labelLarge,
-            color = Color.Gray
-        )
-        Text(
-            title,
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-            color = TechBlack
-        )
-        Text(
-            price,
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = TechBlack,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
+                // Nombre
+                Text(
+                    text = producto.nombre,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 26.sp,
+                    color = TechBlack,
+                    lineHeight = 32.sp
+                )
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            repeat(5) {
-                Icon(Icons.Filled.Star, contentDescription = null, tint = TechYellow, modifier = Modifier.size(18.dp))
-            }
-            Text(" (4.5)", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-        }
+                // Precio
+                Text(
+                    text = "$${producto.precio}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    color = TechBlack,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
 
-        Spacer(modifier = Modifier.height(16.dp))
+                Divider(modifier = Modifier.padding(vertical = 16.dp), color = Color.LightGray.copy(alpha = 0.5f))
 
-        Text(
-            text = "SOBRE ESTE PRODUCTO",
-            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-            color = TechBlack
-        )
+                // Descripción (RECUPERADO)
+                Text(
+                    text = "Descripción",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = TechBlack
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = producto.descripcion.ifEmpty { "Sin descripción disponible para este producto gamer de alta gama." },
+                    color = Color.Gray,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp
+                )
 
-        Text(
-            text = if (description.isNotBlank()) description else "No hay especificaciones disponibles.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.DarkGray,
-            modifier = Modifier.padding(top = 4.dp),
-            lineHeight = 20.sp
-        )
-    }
-}
+                Spacer(Modifier.height(24.dp))
 
-@Composable
-fun QuantitySelector(
-    quantity: Int,
-    onQuantityChange: (Int) -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Text("CANTIDAD:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-        Spacer(modifier = Modifier.weight(1f))
+                // Selector de Cantidad
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("CANTIDAD:", fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.weight(1f))
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
-        ) {
-            IconButton(onClick = { if (quantity > 1) onQuantityChange(quantity - 1) }) {
-                Text("-", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            }
-            Text(
-                text = quantity.toString(),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.width(30.dp),
-                textAlign = TextAlign.Center
-            )
-            IconButton(onClick = { onQuantityChange(quantity + 1) }) {
-                Text("+", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFF0F0F0),
+                        modifier = Modifier.height(40.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { if (quantity > 1) quantity-- }) {
+                                Icon(Icons.Default.Remove, null, tint = TechBlack)
+                            }
+                            Text("$quantity", fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp))
+                            IconButton(onClick = { quantity++ }) {
+                                Icon(Icons.Default.Add, null, tint = TechBlack)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(32.dp))
+
+                // Botón Añadir al Carrito
+                Button(
+                    onClick = {
+                        viewModel.agregarAlCarrito(producto, quantity)
+                        Toast.makeText(context, "Añadido al carrito", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(55.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = TechYellow, contentColor = TechBlack),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("AÑADIR AL CARRITO", fontWeight = FontWeight.Black, fontSize = 16.sp)
+                }
             }
         }
-    }
-}
-
-@Composable
-private fun BottomNavBarPrincipal(
-    viewModel: MainViewModel,
-    itemSeleccionado: String
-) {
-    NavigationBar(containerColor = Color.White) {
-        NavigationBarItem(
-            selected = itemSeleccionado == "Home",
-            onClick = { viewModel.navigateTo(Screen.MainScreen) },
-            icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = TechBlack,
-                indicatorColor = TechYellow
-            )
-        )
-        NavigationBarItem(
-            selected = itemSeleccionado == "Profile",
-            onClick = { viewModel.navigateTo(Screen.Profile) },
-            icon = { Icon(Icons.Default.Person, contentDescription = null) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = TechBlack,
-                indicatorColor = TechYellow
-            )
-        )
-        NavigationBarItem(
-            selected = itemSeleccionado == "Favorites",
-            onClick = { viewModel.navigateTo(Screen.Favorites) },
-            icon = { Icon(Icons.Default.FavoriteBorder, contentDescription = null) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = TechBlack,
-                indicatorColor = TechYellow
-            )
-        )
     }
 }

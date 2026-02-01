@@ -25,6 +25,7 @@ import com.example.ggshop.viewmodel.MainViewModel
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.animateFloatAsState
 import com.example.ggshop.ui.theme.TechBlack
+import com.example.ggshop.ui.theme.TechYellow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -37,12 +38,8 @@ fun InicioSesion(viewModel: MainViewModel) {
     val password by viewModel.password.collectAsState()
     val isLoginValid by viewModel.isLoginValid.collectAsState()
 
-    // 1. CAMBIO: Ahora observamos el error directamente del ViewModel (Base de datos)
+    // Observamos el error directamente del ViewModel
     val loginError by viewModel.loginError.collectAsState()
-
-    // Obtenemos el scope para poder usar 'delay'
-    val coroutineScope = rememberCoroutineScope()
-    var showAdminSuccess by remember { mutableStateOf(false) }
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -64,27 +61,6 @@ fun InicioSesion(viewModel: MainViewModel) {
             )
         }
 
-        // Animación de Admin
-        AnimatedVisibility(
-            visible = showAdminSuccess,
-            enter = slideInVertically() + fadeIn(),
-            exit = slideOutVertically() + fadeOut(),
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 40.dp)
-        ) {
-            Surface(
-                color = TechGreen,
-                shape = RoundedCornerShape(24.dp),
-                shadowElevation = 4.dp
-            ) {
-                Text(
-                    text = "¡Modo Admin Activado!",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-                )
-            }
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -102,38 +78,40 @@ fun InicioSesion(viewModel: MainViewModel) {
 
             Spacer(modifier = Modifier.height(40.dp))
 
+            // --- CAMBIO APLICADO: ETIQUETA PROFESIONAL Y VALIDACIÓN PERMISIVA ---
             OutlinedTextField(
                 value = email,
-                onValueChange = {
-                    // El ViewModel se encarga de limpiar el error
-                    viewModel.onEmailChange(it)
-                },
-                label = { Text("Email") },
+                onValueChange = { viewModel.onEmailChange(it) },
+
+                // 1. Etiqueta profesional que querías
+                label = { Text("Correo electrónico") },
+
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                isError = loginError
+
+                // 2. Validación visual (Rojo):
+                // Se pone rojo SI escribieron algo Y NO tiene formato de correo...
+                // EXCEPTO si escribieron "admin" o "user", en cuyo caso NO se pone rojo.
+                isError = email.isNotEmpty() && (!email.contains("@") || !email.contains(".")) && email != "admin" && email != "user" || loginError
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = password,
-                onValueChange = {
-                    // El ViewModel se encarga de limpiar el error
-                    viewModel.onPasswordChange(it)
-                },
+                onValueChange = { viewModel.onPasswordChange(it) },
                 label = { Text("Contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                isError = (password.isNotEmpty() && password.length < 6) || loginError
+                isError = (password.isNotEmpty() && password.length < 4) || loginError
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Mensaje de Error (Ahora reacciona a la BD)
+            // Mensaje de Error
             AnimatedVisibility(
                 visible = loginError,
                 enter = scaleIn(animationSpec = spring(dampingRatio = 0.5f, stiffness = 300f)) + fadeIn(animationSpec = tween(300)),
@@ -152,11 +130,7 @@ fun InicioSesion(viewModel: MainViewModel) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = {
-                    // 2. CAMBIO: Llamamos a validarLogin() que consulta la BD (Room)
-                    // La navegación la maneja el ViewModel automáticamente si es exitoso.
-                    viewModel.validarLogin()
-                },
+                onClick = { viewModel.validarLogin() },
                 enabled = isLoginValid,
                 modifier = Modifier
                     .fillMaxWidth()

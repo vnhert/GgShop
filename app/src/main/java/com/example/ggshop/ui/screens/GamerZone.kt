@@ -37,6 +37,7 @@ fun GamerZone(viewModel: MainViewModel) {
     val puntos by viewModel.puntosUsuario.collectAsState()
     val context = LocalContext.current
 
+    // Lista de juegos disponibles
     val juegos = listOf(
         GameOption("Valorant", R.drawable.valorant),
         GameOption("League of Legends", R.drawable.lol),
@@ -54,8 +55,6 @@ fun GamerZone(viewModel: MainViewModel) {
     // Meta: 100,000 puntos = 90% Descuento
     val metaPuntos = 100000f
     val maxDescuento = 90f
-
-    // Regla de tres simple, topeada a 90%
     val descuentoActual = (puntos.toFloat() / metaPuntos) * maxDescuento
     val descuentoMostrado = descuentoActual.coerceIn(0f, 90f)
 
@@ -95,7 +94,6 @@ fun GamerZone(viewModel: MainViewModel) {
                     Text("MIS GG POINTS", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Text("$puntos", color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.ExtraBold)
 
-                    // TEXTO DE DESCUENTO ACTUALIZADO
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Nivel Actual: %.1f%% OFF".format(descuentoMostrado),
@@ -117,6 +115,7 @@ fun GamerZone(viewModel: MainViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // GRID DE JUEGOS
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -173,6 +172,7 @@ fun GamerZone(viewModel: MainViewModel) {
         }
     }
 
+    // DIÁLOGO DE CANJE
     if (showDialog && juegoSeleccionado != null) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -209,9 +209,8 @@ fun GamerZone(viewModel: MainViewModel) {
                             .padding(16.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        // ACTUALIZAMOS EL TEXTO PARA MOSTRAR QUE SON MENOS PUNTOS AHORA
                         Text(
-                            text = "+${horasJugadas.toInt() * 25} Puntos", // Ahora es * 25
+                            text = "+${horasJugadas.toInt() * 25} Puntos",
                             fontWeight = FontWeight.ExtraBold,
                             color = Color(0xFFF57F17),
                             fontSize = 20.sp
